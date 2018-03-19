@@ -464,15 +464,17 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 
 	int nPolyCount = 0;
 	int nPolyCountReverse;
-	int nPoly = 0;
+	float nPoly = 0.f;
+	int nP = 0;
+	bool T1 = false;
 	vector<vec2f> pts;
-	pts.resize(static_cast<unsigned int>(ceilf(hitObjects->at(nObject).getSliderTickCount()) * hitObjects->at(nObject).getSliderRepeatCount() * cpCount) + 1);
+	pts.resize(static_cast<unsigned int>(ceilf(hitObjects->at(nObject).getSliderTickCount()) * hitObjects->at(nObject).getSliderRepeatCount() * static_cast<float>(cpCount)) + (UINT)1);
 
 	vec2f pPBack = pP;
 	vec2f pNBack = pN;
 
-	if (hitObjects->at(nObject).getSliderRepeatCount() == 1) {
-		for (float i = 0.f; i < ceilf(hitObjects->at(nObject).getSliderTickCount()); i++) {
+	if (hitObjects->at(nObject).getSliderRepeatCount() == 1.f) {
+		for (float i = 0.f; i < hitObjects->at(nObject).getSliderTickCount(); i++) {
 			float tB = i / hitObjects->at(nObject).getSliderTickCount();
 			float tE = (i + 1.f) > hitObjects->at(nObject).getSliderTickCount() ? 1.f : (i + 1.f) / hitObjects->at(nObject).getSliderTickCount();
 			float tN = (i + 2.f) / hitObjects->at(nObject).getSliderTickCount();
@@ -508,9 +510,9 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 		}
 	}
 	else {
-		for (int repeated = 0; repeated < hitObjects->at(nObject).getSliderRepeatCount(); repeated++) {
+		for (int repeated = 0; static_cast<float>(repeated) < hitObjects->at(nObject).getSliderRepeatCount(); repeated++) {
 			if (repeated % 2 == 0) {
-				for (float i = 0.f; i < ceilf(hitObjects->at(nObject).getSliderTickCount()); i++) {
+				for (float i = 0.f; i < hitObjects->at(nObject).getSliderTickCount(); i++) {
 					float tB = i / hitObjects->at(nObject).getSliderTickCount();
 					float tE = (i + 1.f) > hitObjects->at(nObject).getSliderTickCount() ? 1.f : (i + 1.f) / hitObjects->at(nObject).getSliderTickCount();
 					float tN = (i + 2.f) / hitObjects->at(nObject).getSliderTickCount();
@@ -547,7 +549,7 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 			}
 			if (repeated % 2 != 0) {
 				nPolyCountReverse = nPolyCount;
-				for (float i = 0.f; i < ceilf(hitObjects->at(nObject).getSliderTickCount()); i++) {
+				for (float i = 0.f; i < hitObjects->at(nObject).getSliderTickCount(); i++) {
 					nPolyCountReverse -= cpCount;
 
 					pts.at(nPolyCount + 1) = vec2f((pE - pts.at(nPolyCount - cpCount + 2)) + pE);
@@ -581,19 +583,30 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 	while (songTime < hitObjects->at(nObject).getEndTime() && songStarted) {
 		float t = static_cast<float>(songTime - hitObjects->at(nObject).getStartTime()) / static_cast<float>(hitObjects->at(nObject).getSliderTime());
 
-		if (t *hitObjects->at(nObject).getSliderTickCount() - static_cast<float>(nPoly) > 1.f && nPoly != (hitObjects->at(nObject).getSliderRepeatCount() * hitObjects->at(nObject).getSliderTickCount()) - 1) {
-			nPoly++;
-		}
-		if (nPoly > hitObjects->at(nObject).getSliderRepeatCount() * hitObjects->at(nObject).getSliderTickCount()) {
-			nPoly = static_cast<int>(hitObjects->at(nObject).getSliderRepeatCount() * hitObjects->at(nObject).getSliderTickCount());
-		}
+		float floor = floorf(t);
+		t = static_cast<int>(floor) % 2 == 0 ? t - floor : floor + 1.f - t;
 
-		float T = t * hitObjects->at(nObject).getSliderTickCount() - static_cast<float>(nPoly);
+		/*if (t >= 1 && !T1) {
+			nPoly++;
+			nP++;
+			T1 = true;
+		}
+		if (t * hitObjects->at(nObject).getSliderTickCount() - nPoly > 1.f) {
+			nPoly++;
+			nP++;
+		}
+		if (nPoly > hitObjects->at(nObject).getSliderTickCount()) {
+			nPoly = floorf(nP / hitObjects->at(nObject).getSliderTickCount()) * hitObjects->at(nObject).getSliderTickCount();
+		}*/
+
+		float T = t * hitObjects->at(nObject).getSliderTickCount() - nPoly;
 		if (T > 1.f) {
 			T = 1.f;
 		}
 
-		pCursor = PolyBezier(pts, cpCount, nPoly, T);
+		/* EventLog */	fprintf(wEventLog, ("[DEBUGGING]  t: " + to_string(t) + "\n             nPoly: " + to_string(nPoly) + "\n             nP: " + to_string(nP) + "\n             T: " + to_string(T) + "\n").c_str());
+
+		pCursor = PolyBezier(pts, cpCount, nP, T);
 
 		SetCursorPos(static_cast<int>(pCursor.x), static_cast<int>(pCursor.y));
 
