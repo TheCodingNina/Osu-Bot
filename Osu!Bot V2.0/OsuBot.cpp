@@ -9,6 +9,8 @@
 #define CB_CheckBoxAutoOpenSong 3003
 
 #include "stdafx.h"
+
+#include "GlobalVariables.h"
 #include "OsuBot.h"
 
 using namespace std;
@@ -20,20 +22,28 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 
 // User Global Variables:
-HWND hWnd = NULL,
-hwndButtonOpenSongFolder = NULL,
-hwndButtonOpenSongFile = NULL,
-hwndCheckBoxAutoOpenSong = NULL;
+HWND hWnd = NULL;
+HWND hwndButtonOpenSongFolder = NULL;
+HWND hwndButtonOpenSongFile = NULL;
+HWND hwndCheckBoxAutoOpenSong = NULL;
 wstring statusText = L"Start up...";
+wstring songsPath;
 bool songFileCheck;
 
-// Standard Varables for UI:
+// Standard Variables for input Keys:
+WORD inputMainKey = 0xBC;
+WORD inputAltKey = 0xBE;
+
+// Standard Variables for UI:
 wstring songsFolderText = L"Select \"osu!\" Songs Folder.";
 wstring songFileText = L"Select an \"osu! beatmap\"";
 
+int nHeight = 290;
+int nWidth = 585;
 RECT rectOsuBotWindow;
 RECT rectSongsFolder = { 10, 10, nWidth - (rectSongsFolder.left + 130), rectSongsFolder.top + 40 };
 RECT rectSongFile = { 10, 80, nWidth - (rectSongFile.left + 130), rectSongFile.top + 40 };
+RECT rectStatus = { 15, nHeight - 65, nWidth - (2 * rectStatus.left), rectStatus.top + 20 };
 // User Global Variables END;
 
 // Forward declarations of functions included in this code module:

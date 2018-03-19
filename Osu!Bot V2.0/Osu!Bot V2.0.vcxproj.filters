@@ -13,18 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\OsuBot">
+      <UniqueIdentifier>{a12ea123-11cb-464d-9f89-22337794502d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OsuBot.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HitObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vec2f.h">
@@ -38,6 +35,27 @@
     </ClInclude>
     <ClInclude Include="DrawTextToWindow.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OsuBot.h">
+      <Filter>Header Files\OsuBot</Filter>
+    </ClInclude>
+    <ClInclude Include="HitObject.h">
+      <Filter>Header Files\OsuBot</Filter>
+    </ClInclude>
+    <ClInclude Include="timeAddress.h">
+      <Filter>Header Files\OsuBot</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalVariables.h">
+      <Filter>Header Files\OsuBot</Filter>
+    </ClInclude>
+    <ClInclude Include="SendInput.h">
+      <Filter>Header Files\OsuBot</Filter>
+    </ClInclude>
+    <ClInclude Include="CursorMovement.h">
+      <Filter>Header Files\OsuBot</Filter>
+    </ClInclude>
+    <ClInclude Include="SongsReading.h">
+      <Filter>Header Files\OsuBot</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

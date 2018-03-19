@@ -151,13 +151,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CursorMovement.h" />
     <ClInclude Include="DrawTextToWindow.h" />
+    <ClInclude Include="GlobalVariables.h" />
     <ClInclude Include="HitObject.h" />
     <ClInclude Include="OsuBot.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SendInput.h" />
+    <ClInclude Include="SongsReading.h" />
     <ClInclude Include="split_string.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="timeAddress.h" />
     <ClInclude Include="vec2f.h" />
   </ItemGroup>
   <ItemGroup>
