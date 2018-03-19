@@ -70,7 +70,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (!songsPath.empty()) { pathSet = TRUE; }
 		rSFData.close();
 	}
-	else { rSFData.close(); pathSet = FALSE; }
+	else { 
+		rSFData.close(); 
+		pathSet = FALSE;
+		/* EventLog */	fprintf(wEventLog, "[WARNING]  NO songsfolder path was found!\n");
+	}
 
 	thread findGameThread(FindGame);
 	findGameThread.detach();
@@ -237,6 +241,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			string autoState = (autoOpenSong ? "Enabled" : "Disabled");
 			/* EventLog */	fprintf(wEventLog, ("[EVENT]  Auto opening of beatmap: " + autoState + "\n").c_str());
+
+			if (autoOpenSong && !pathSet) {
+				statusText = L"Please select \"osu!\" Songs Folder for Osu!Bot to autosearch in for the beatmaps!";
+				DrawTextToWindow(hWnd, statusText, rectStatus);
+			}
 
 			break;
 		}
