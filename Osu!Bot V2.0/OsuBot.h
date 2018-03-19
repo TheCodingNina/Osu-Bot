@@ -93,7 +93,7 @@ LPVOID GetBaseAddress(HANDLE hProcess, HANDLE hThread) {
 	enum THREADINFOCLASS {
 		ThreadBasicInformation,
 	};
-	
+
 
 	LPCWSTR moduleName = L"ntdll.dll";
 	bool loadedManually = false;
@@ -131,7 +131,7 @@ LPVOID GetBaseAddress(HANDLE hProcess, HANDLE hThread) {
 }
 
 DWORD GetThreadStartAddress(HANDLE processHandle, HANDLE hThread) {
-	DWORD stacktop = 0,	result = 0;
+	DWORD stacktop = 0, result = 0;
 
 	MODULEINFO mi;
 
@@ -251,7 +251,7 @@ LPVOID GetTimeAddress() {
 
 	DWORD osuProcessID = GetProcessID("osu!.exe");
 	osuProcessHandle = GetHandle(osuProcessID);
-	
+
 	LPVOID threadAddress = reinterpret_cast<LPVOID>((GetThreadStack(osuProcessHandle, ThreadList(osuProcessID)))[0] + threadOffset);
 
 	return GetAddress(osuProcessHandle, threadAddress, pLevel, offsets);
@@ -269,7 +269,8 @@ void TimeThread() {
 
 void SendKeyPress(HitObject *hitObject) {
 	BPM = hitObject->getBPM() == 0.f ? BPM * 1.02f : hitObject->getBPM();
-	if (((static_cast<float>(hitObject->getStartTime() - prevInputTime) / 1.12f) > 3.f * ((BPM * 6.f) / beatMapDivider)) || altKey == TRUE) {
+
+	if ((static_cast<float>(hitObject->getStartTime() - prevInputTime) > 125.f) || altKey == TRUE) {
 		if (inputKeyBoard) {
 			input.type = INPUT_KEYBOARD;
 			input.ki.dwFlags = NULL;
@@ -310,8 +311,6 @@ void SendKeyPress(HitObject *hitObject) {
 }
 
 void SendKeyRelease(HitObject *hitObject) {
-	prevInputTime = hitObject->getEndTime();
-	
 	if (inputKeyBoard) {
 		input.type = INPUT_KEYBOARD;
 		input.ki.dwFlags = KEYEVENTF_KEYUP;
@@ -324,6 +323,10 @@ void SendKeyRelease(HitObject *hitObject) {
 		input.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
 		SendInput(1, &input, sizeof(INPUT));
 	}
+
+	prevInputTime = hitObject->getStartTime();
+	if (hitObject->getEndTime() > hitObject->getStartTime())
+		prevInputTime = hitObject->getEndTime();
 }
 
 
@@ -350,7 +353,7 @@ vector<vec2f> FindControlPoints(vec2f vec1, vec2f vec2, vec2f vec3) {
 
 void MoveToStandard(HitObject *hitObject) {
 	GetCursorPos(&cursorPoint);
-	
+
 	pB = vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y));
 	pE = vec2f((hitObject->getStartPos().x - stackOffset * hitObject->getStack()) * multiplierX + osuWindowX,
 		(hitObject->getStartPos().y - stackOffset * hitObject->getStack())  * multiplierY + osuWindowY);
@@ -396,7 +399,7 @@ void MoveToFlowing(vector<HitObject>* hitObjects, const int nObject) {
 		pN = vec2f(((hitObjects->at(nObject + 1).getPointByT(tN).x - hitObjects->at(nObject + 1).getStack() * stackOffset) * multiplierX) + osuWindowX,
 			((hitObjects->at(nObject + 1).getPointByT(tN).y - hitObjects->at(nObject + 1).getStack() * stackOffset) * multiplierY) + osuWindowY);
 	}
-	
+
 	if (nObject == 0)
 		p0 = FindControlPoints(pP, pB, pE).at(0);
 
@@ -469,9 +472,9 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 	vec2f pNBack = pN;
 
 	if (hitObjects->at(nObject).getSliderRepeatCount() == 1) {
-		for (float i = 0.f; i < floorf(hitObjects->at(nObject).getSliderTickCount()); i++) {
+		for (float i = 0.f; i < ceilf(hitObjects->at(nObject).getSliderTickCount()); i++) {
 			float tB = i / hitObjects->at(nObject).getSliderTickCount();
-			float tE = (i + 1.f) > floorf(hitObjects->at(nObject).getSliderTickCount()) ? 1.f : (i + 1.f) / floorf(hitObjects->at(nObject).getSliderTickCount());
+			float tE = (i + 1.f) > hitObjects->at(nObject).getSliderTickCount() ? 1.f : (i + 1.f) / hitObjects->at(nObject).getSliderTickCount();
 			float tN = (i + 2.f) / hitObjects->at(nObject).getSliderTickCount();
 
 			pN = pNBack;
@@ -495,7 +498,7 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 				//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 				pts.at(nPolyCount + 1) = vec2f((pts.at(nPolyCount) - pBack) + pts.at(nPolyCount));
 			}
-			
+
 			//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 			pts.at(nPolyCount + 2) = FindControlPoints(pts.at(nPolyCount), pE, pN).at(1);
 			pts.at(nPolyCount + cpCount) = pE;
@@ -533,7 +536,7 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 						//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 						pts.at(nPolyCount + 1) = vec2f((pts.at(nPolyCount) - pBack) + pts.at(nPolyCount));
 					}
-					
+
 					//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 					pts.at(nPolyCount + 2) = FindControlPoints(pts.at(nPolyCount), pE, pN).at(1);
 					pts.at(nPolyCount + cpCount) = pE;
@@ -642,7 +645,7 @@ void AutoPlay(wstring nowPlaying) {
 		statusText = L"Now Playing: " + beatmap;
 	DrawTextToWindow(hWnd, statusText, rectStatus);
 
-	prevInputTime = 0;
+	prevInputTime = songTime;
 	SendMessage(hwndProgressBar, PBM_SETPOS, WPARAM(0), NULL);
 
 	for (unsigned int nObject = 0; nObject < hitObjects.size(); nObject++) {
@@ -933,7 +936,7 @@ void ParseSong(LPCTSTR songPath) {
 	}
 
 	if (path)
-	/* EventLog */	fprintf(wEventLog, "[EVENT]  Beatmap parsed without major errors.\n");
+		/* EventLog */	fprintf(wEventLog, "[EVENT]  Beatmap parsed without major errors.\n");
 }
 
 bool OpenSongAuto(wstring title) {
@@ -967,7 +970,7 @@ bool OpenSongAuto(wstring title) {
 			beatmapName.at(i) = '_';
 		}
 	}
-	
+
 	for (unsigned int i = 0; i < strlen(charsToRemove); i++) {
 		beatmapName.erase(remove(beatmapName.begin(), beatmapName.end(), charsToRemove[i]), beatmapName.end());
 	}
@@ -1229,10 +1232,10 @@ void FindGame() {
 	osuWindow = FindWindowA(NULL, "osu!");
 	if (osuWindow == NULL) {
 		/* EventLog */	fprintf(wEventLog, "[WARNING]  The procces \"osu!\" was not found!\n");
-		
+
 		statusText = L"\"osu!\" NOT found!   Please start \"osu!\"...";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
-		
+
 		while (osuWindow == NULL) {
 			osuWindow = FindWindowA(NULL, "osu!");
 			Sleep(500);
