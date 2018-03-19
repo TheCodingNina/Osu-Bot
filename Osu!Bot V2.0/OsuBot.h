@@ -36,7 +36,7 @@ void TimeThread() {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 	while (true) {
 		ReadProcessMemory(osuProcessHandle, timeAddress, &songTime, 4, NULL);
-		this_thread::sleep_for(chrono::microseconds(100));
+		this_thread::sleep_for(chrono::microseconds(200));
 	}
 }
 
@@ -101,7 +101,7 @@ void AutoPlay(wstring nowPlaying) {
 			}
 			nObject -= (UINT)2;
 		}
-		this_thread::sleep_for(chrono::microseconds(50));
+		this_thread::sleep_for(chrono::microseconds(100));
 	}
 
 	this_thread::sleep_for(chrono::milliseconds(1000));
