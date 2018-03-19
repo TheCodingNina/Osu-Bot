@@ -585,7 +585,7 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 		t = static_cast<int>(floor) % 2 == 0 ? t - floor : floor + 1.f - t;
 
 		float T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
-		if (T >= 1.f) {
+		if (T > 1.002f) {
 			++nPoly;
 			T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
 		}
