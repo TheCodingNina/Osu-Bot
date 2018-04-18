@@ -29,15 +29,15 @@ LPVOID GetBaseAddress(HANDLE hProcess, HANDLE hThread) {
 	bool loadedManually = false;
 
 
-	HMODULE module = GetModuleHandle(moduleName);
+	HMODULE hModule = GetModuleHandle(moduleName);
 
-	if (!module) {
-		module = LoadLibrary(moduleName);
+	if (!hModule) {
+		hModule = LoadLibrary(moduleName);
 		loadedManually = true;
 	}
 
 	LONG(__stdcall *NtQueryInformationThread)(HANDLE ThreadHandle, THREADINFOCLASS ThreadInformationClass, PVOID ThreadInformation, ULONG ThreadInformationLength, PULONG ReturnLength);
-	NtQueryInformationThread = reinterpret_cast<decltype(NtQueryInformationThread)>(GetProcAddress(module, "NtQueryInformationThread"));
+	NtQueryInformationThread = reinterpret_cast<decltype(NtQueryInformationThread)>(GetProcAddress(hModule, "NtQueryInformationThread"));
 
 	if (NtQueryInformationThread) {
 		NT_TIB tib = { 0 };
@@ -48,14 +48,14 @@ LPVOID GetBaseAddress(HANDLE hProcess, HANDLE hThread) {
 			ReadProcessMemory(hProcess, tbi.TebBaseAddress, &tib, sizeof(tib), nullptr);
 
 			if (loadedManually)
-				FreeLibrary(module);
+				FreeLibrary(hModule);
 
 			return tib.StackBase;
 		}
 	}
 
 	if (loadedManually)
-		FreeLibrary(module);
+		FreeLibrary(hModule);
 
 	return NULL;
 }
@@ -153,7 +153,7 @@ DWORD GetProcessID(string exe) {
 	return NULL;
 }
 
-LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel, LPINT offsets) {
+LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel, vector<int> offsets) {
 	int address = reinterpret_cast<int>(baseAddress);
 
 	for (int i = 0; i < pLevel; i++) {
@@ -164,6 +164,6 @@ LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel, LPINT 
 	return reinterpret_cast<LPVOID>(address);
 }
 
-LPVOID GetAddress(HANDLE processHandle, LPVOID baseAddress, int pLevel, LPINT offsets) {
+LPVOID GetAddress(HANDLE processHandle, LPVOID baseAddress, int pLevel, vector<int> offsets) {
 	return FindPointerAddress(processHandle, baseAddress, pLevel, offsets);
 }
