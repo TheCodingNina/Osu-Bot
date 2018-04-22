@@ -11,6 +11,8 @@
 #include "stdafx.h"
 
 #include "GlobalVariables.h"
+#include "DrawTextToWindow.h"
+#include "ConfigurationFile.h"
 #include "OsuBot.h"
 
 using namespace std;
@@ -41,15 +43,16 @@ wstring songFileText = L"Select an \"osu! beatmap\"";
 int nHeight = 290;
 int nWidth = 585;
 RECT rectOsuBotWindow;
-RECT rectSongsFolder = { 10, 10, nWidth - (rectSongsFolder.left + 130), rectSongsFolder.top + 40 };
-RECT rectSongFile = { 10, 80, nWidth - (rectSongFile.left + 130), rectSongFile.top + 40 };
-RECT rectStatus = { 15, nHeight - 65, nWidth - (2 * rectStatus.left), rectStatus.top + 20 };
+RECT rectSongsFolder = { 10, 10, nWidth - 140, 50 };
+RECT rectSongFile = { 10, 80, nWidth - 140, 120 };
+RECT rectStatus = { 15, nHeight - 65, nWidth - 30, rectStatus.top + 18 };
 // User Global Variables END;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK	Settings(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	ErrorBox(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
@@ -62,29 +65,61 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// TODO: Place user added startup code here.
 	CreateDirectory(LPCWSTR(L"Data"), NULL);
-	wEventLog = fopen("Data\\Event.log", "w");
+
+
+	if (fopen("Data\\Events.log", "r")) {
+		DeleteFile(L"Data\\Events_OLD.log");
+		experimental::filesystem::copy("Data\\Events.log", "Data\\Events_OLD.log");
+		_fcloseall();
+	}
+
+	wEventLog = fopen("Data\\Events.log", "w");
 	if (wEventLog == NULL) { DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox); }
 
 	time_t timeStamp = time(nullptr);
 	string timeString = asctime(localtime(&timeStamp));
 	timeString.erase(timeString.end() - 1, timeString.end());
-	string logString = "Event.log created at " + timeString;
+	string logString = "Events.log created at " + timeString;
 
 	/* EventLog */	fprintf(wEventLog, (logString + "\n").c_str());
+	fflush(wEventLog);
 
-	fstream rSFData; rSFData.open("Data\\SFData.txt", fstream::in);
-	if (rSFData) {
-		string readLine;
-		getline(rSFData, readLine); getline(rSFData, readLine);
-		songsPath.assign(readLine.begin(), readLine.end());
-		if (!songsPath.empty()) { pathSet = TRUE; }
-		rSFData.close();
+
+	if (fopen("Data\\configFile.cfg", "r")) {
+		/* EventLog */	fprintf(wEventLog, "[EVENT]  ConfigFile found.\n");
+
+		if (ReadFromConfigFile({ timerPointer }))
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  TimerPointer get succesfull.\n");
+		else
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  TimerPointer not specified!\n");
+
+		if (ReadFromConfigFile({ songsFolderPath })) {
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  SongsFolderPath get succesfull.\n");
+			pathSet = TRUE;
+		}
+		else {
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
+			pathSet = FALSE;
+		}
 	}
-	else { 
-		rSFData.close(); 
-		pathSet = FALSE;
-		/* EventLog */	fprintf(wEventLog, "[WARNING]  NO songsfolder path was found!\n");
+	else {
+		/* EventLog */	fprintf(wEventLog, "[WARNING]  ConfigFile not found!\n");
+
+		int configMB = MessageBoxW(hWnd,
+			L"No config file was found!\nDo you want to generate a new config file?\n\nIf this doesn't work try manualy creating an empty file named \"configFile.cfg\" under the \"Data\" folder.",
+			L"Config file not found!",
+			MB_ICONWARNING | MB_YESNO | MB_APPLMODAL);
+
+		if (configMB == IDYES) {
+			CreateNewConfigFile();
+
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  Config file generated.\n");
+		}
+		else
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  Config file was not auto generated.\n");
 	}
+	fflush(wEventLog);
+
 
 	thread findGameThread(FindGame);
 	findGameThread.detach();
@@ -92,7 +127,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	// Initialize global strings
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadStringW(hInstance, IDC_OSUBOTV20, szWindowClass, MAX_LOADSTRING);
+	LoadStringW(hInstance, IDC_OSUBOTV2, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 
 	// Perform application initialization:
@@ -100,7 +135,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_OSUBOTV20));
+	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_OSUBOTV2));
 
 	MSG msg;
 
@@ -130,10 +165,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_OSUBOTV20));
+	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_OSUBOTV2));
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_OSUBOTV20);
+	wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_OSUBOTV2);
 	wcex.lpszClassName = szWindowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -156,7 +191,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	hWnd = CreateWindowW(
 		szWindowClass,
 		szTitle,
-		WS_SYSMENU | WS_MINIMIZEBOX | WS_SIZEBOX | 
+		WS_SYSMENU | WS_MINIMIZEBOX | WS_SIZEBOX |
 		CS_VREDRAW | CS_HREDRAW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		nWidth, nHeight,
@@ -186,7 +221,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 //
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	
+
 	switch (message) {
 	case WM_GETMINMAXINFO:
 	{
@@ -207,6 +242,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			DrawTextToWindow(hWnd, statusText, rectStatus);
 
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  User selecting/changing Songs Folder.\n");
+			fflush(wEventLog);
 
 			pathSet = OpenSongFolder();
 
@@ -223,6 +259,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 				/* EventLog */	fprintf(wEventLog, "[EVENT]  Songs Folder Successfully Selected.\n           or not changed.\n");
 			}
+			fflush(wEventLog);
+
+			UpdateConfigFile();
 
 			SendMessage(hwndButtonOpenSongFolder, WM_SETTEXT, 0, ((pathSet) ? (LPARAM(L"Change")) : (LPARAM(L"Select"))));
 			break;
@@ -251,6 +290,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			string autoState = (autoOpenSong ? "Enabled" : "Disabled");
 			/* EventLog */	fprintf(wEventLog, ("[EVENT]  Auto opening of beatmap: " + autoState + "\n").c_str());
+			fflush(wEventLog);
 
 			if (autoOpenSong && !pathSet) {
 				statusText = L"Please select \"osu!\" Songs Folder for Osu!Bot to autosearch in for the beatmaps!";
@@ -265,6 +305,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
 
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"Data\" Folder.\n");
+			fflush(wEventLog);
 			break;
 		}
 		case ID_DATAFILES_OPENSONGDATA:
@@ -273,6 +314,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
 
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"SFData.txt\".\n");
+			fflush(wEventLog);
 			break;
 		}
 		case ID_DATAFILES_OPENBEATMAPDATA:
@@ -281,22 +323,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
 
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"BMData.txt\".\n");
+			fflush(wEventLog);
 			break;
 		}
 		case ID_DATAFILES_OPENEVENTLOG:
 		{
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Event.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
+			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"Event.log\".\n");
+			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events_OLD.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
+
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"Events.log\".\n");
+			fflush(wEventLog);
 			break;
 		}
 		case IDM_CLEARDATA:
 		{
+			int clearDataMB = MessageBoxW(hWnd,
+				L"Osu!Bot will clear/clean up all collected data.\nNOTE: this will not clear the current log file and config file!\n\nAre you sure you want to delete the data files?",
+				L"Delete Osu!Bot data files?",
+				MB_ICONWARNING | MB_YESNO | MB_APPLMODAL);
+			if (clearDataMB == IDNO)
+				break;
+
 			DeleteFile(L"Data\\SFData.txt");
 			DeleteFile(L"Data\\BMData.txt");
+			DeleteFile(L"Data\\Events_OLD.log");
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User cleared Data Files.\n");
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User cleared data Files.\n");
+			fflush(wEventLog);
 
 			SendMessage(hwndButtonOpenSongFolder, WM_SETTEXT, 0, LPARAM(L"Select"));
 			SendMessage(hwndButtonOpenSongFile, WM_SETTEXT, 0, LPARAM(L"Select"));
@@ -305,12 +361,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			DrawTextToWindow(hWnd, songFileText, rectSongFile);
 			break;
 		}
+		case IDM_SETTINGS:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_SETTINGSBOX), hWnd, Settings);
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opened Settings.\n");
+			fflush(wEventLog);
+			break;
+
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User opened about box.\n");
+			fflush(wEventLog);
 			break;
 
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Exited the program.\n");
+			fflush(wEventLog);
 			break;
 
 		default:
@@ -332,9 +398,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		nHeight = rectOsuBotWindow.bottom > 290 ? rectOsuBotWindow.bottom : 290;
 		nWidth = rectOsuBotWindow.right > 585 ? rectOsuBotWindow.right : 585;
 
-		rectSongsFolder = { 10, 10, nWidth - (rectSongsFolder.left + 130), rectSongsFolder.top + 40 };
-		rectSongFile = { 10, 80, nWidth - (rectSongFile.left + 130), rectSongFile.top + 40 };
-		rectStatus = { 15, nHeight - 65, nWidth - (2 * rectStatus.left), rectStatus.top + 20 };
+		rectSongsFolder = { 10, 10, nWidth - 140, 50 };
+		rectSongFile = { 10, 80, nWidth - 140, 120 };
+		rectStatus = { 15, nHeight - 65, nWidth - 30, rectStatus.top + 18 };
 
 
 		// TODO: Add any drawing code that uses hdc here...
@@ -427,6 +493,74 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	} return 0;
+}
+
+// Message handler for settings box.
+INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message) {
+	case WM_INITDIALOG:
+		SetDlgItemTextW(hDlg, IDC_THREADOFFSET, (LPWSTR)threadOffset);
+		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET1, (LPWSTR)offsets[0]);
+		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET2, (LPWSTR)offsets[1]);
+		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET3, (LPWSTR)offsets[2]);
+		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET4, (LPWSTR)offsets[3]);
+		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET5, (LPWSTR)offsets[4]);
+		return (INT_PTR)TRUE;
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK) {
+			TCHAR offset[MAXCHAR];
+			bool subtrating = FALSE;
+
+
+			for (int i = 0; i <= 5; i++) {
+				GetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), (LPWSTR)offset, MAXCHAR);
+				wstring wOffset = wstring(offset);
+
+				if (wOffset[0] == '-') {
+					subtrating = TRUE;
+				}
+
+				string tOffset = string(wOffset.begin() + (int)subtrating, wOffset.end());
+				stringstream stream;
+				stream << hex << tOffset;
+
+				if (i == 0) {
+					stream >> threadOffset;
+					if (subtrating) {
+						threadOffset = -threadOffset;
+						subtrating = FALSE;
+					}
+				}
+				else {
+					stream >> offsets[i - 1];
+					if (subtrating) {
+						offsets[i - 1] = -offsets[i - 1];
+						subtrating = FALSE;
+					}
+				}
+			}
+
+
+			// -32C  DC 7A8 64C 7C4 660
+			UpdateConfigFile();
+
+
+			/* EventLog */	fprintf(wEventLog, "            Settings are changed!\n");
+			EndDialog(hDlg, LOWORD(wParam));
+			fflush(wEventLog);
+
+			return (INT_PTR)TRUE;
+		}
+		else if (LOWORD(wParam) == IDCANCEL) {
+			/* EventLog */	fprintf(wEventLog, "            Nothing was changed.\n");
+			fflush(wEventLog);
+
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		} break;
+	} return (INT_PTR)FALSE;
 }
 
 // Message handler for error box.

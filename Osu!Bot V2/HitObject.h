@@ -1,18 +1,16 @@
 #pragma once
 
-#define MIN(X, Y) X < Y ? X : Y
-#define TWO_PI static_cast<float>(M_PI * 2.f)
-#define HALF_PI static_cast<float>(M_PI / 2.f)
-
-#define HIT_SLIDER 2
-#define HIT_SPINNER 8
-#define HIT_CIRCLE 1
 
 #include "stdafx.h"
 
-extern FILE *wEventLog;
+#include "GlobalVariables.h"
+
 
 using namespace std;
+
+
+extern FILE *wEventLog;
+
 
 inline bool isIn(float a, float b, float c) {
 	return (b > a && b < c) || (b < a && b > c);
@@ -47,7 +45,7 @@ inline vec2f PolyBezier(const vector<vec2f> &pts, const int &cp, const int &r, c
 
 inline vec2f Intersect(vec2f a, vec2f ta, vec2f b, vec2f tb) {
 	float des = tb.x * ta.y - tb.y * ta.x;
-	if (abs(des) < 0.00001f) { /* EventLog */  fprintf(wEventLog, "[ERROR]  Intersect --> Vectors are parallel.\n"); }
+	if (abs(des) < 0.00001f) { /* EventLog */  fprintf(wEventLog, "[ERROR]  Intersect --> Vectors are parallel.\n"); fflush(wEventLog); }
 	float u = ((b.y - a.y) * ta.x + (a.x - b.x) * ta.y) / des;
 	return b.cpy().add(tb.x * u, tb.y * u);
 }
@@ -179,6 +177,8 @@ public:
 		try { oldPoint = sliderSegments.at(0).points.at(0); }
 		catch (...) {
 			/* EventLog */	fprintf(wEventLog, "[ERROR]  getPointByT --> oldPoint\n");
+			fflush(wEventLog);
+
 			return oldPoint;
 		}
 
@@ -293,8 +293,10 @@ public:
 						startAng -= TWO_PI;
 					else if (abs(startAng - (endAng - TWO_PI)) < TWO_PI && isIn(startAng, midAng, endAng - TWO_PI))
 						endAng -= TWO_PI;
-					else
+					else {
 						/* EventLog */	fprintf(wEventLog, ("[ERROR]  Angle error: (" + to_string(startAng) + ", " + to_string(midAng) + ", " + to_string(endAng) + ")\n").c_str());
+						fflush(wEventLog);
+					}
 				}
 				float arcAng = pixelLength / radius;
 				if (endAng > startAng) endAng = startAng + arcAng;

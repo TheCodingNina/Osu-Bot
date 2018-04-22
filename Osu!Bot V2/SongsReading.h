@@ -18,7 +18,7 @@ void ParseSong(LPCTSTR songPath) {
 	bool timing = false;
 	bool hits = false;
 	bool beatDivisor = false;
-	while (path) {
+	while (!path.eof()) {
 		string str;
 		getline(path, str);
 		if (str.find("[General]") != string::npos) {
@@ -402,7 +402,7 @@ bool OpenSongFolder() {
 				songsPath = pathName;
 
 				fstream wSFData; wSFData.open("Data\\SFData.txt", fstream::out);
-				wSFData << "[osu! Songs directory]\n" << string(songsPath.begin(), songsPath.end()) << "\n\n[Songs Folders]\n";
+				wSFData << "[Songs Folders]\n";
 
 				for (auto beatmapFolder : experimental::filesystem::directory_iterator(pathName)) {
 					stringstream sstream; sstream << beatmapFolder;
@@ -412,20 +412,24 @@ bool OpenSongFolder() {
 				}
 				wSFData.close();
 			}
-			else songsPath.clear();
+			else
+				songsPath.clear();
+
 			psi->Release();
 		}
-		else songsPath.clear();
+		else
+			songsPath.clear();
+
 		pfd->Release();
 		CoTaskMemFree(pathName);
 		CoUninitialize();
-	} fstream rSFData; rSFData.open("Data\\SFData.txt", fstream::in);
-	if (!songsPath.empty()) { rSFData.close(); return TRUE; }
-	else if (rSFData && songsPath.empty()) {
-		string getLine;
-		getline(rSFData, getLine); getline(rSFData, getLine);
-		songsPath.assign(getLine.begin(), getLine.end());
-		rSFData.close(); return TRUE;
+	}
+
+	if (fopen("Data\\SFData.txt", "r"))
+		return TRUE;
+	else if (songsPath.empty()) {
+		ReadFromConfigFile({ songsFolderPath });
+		return TRUE;
 	}
 	else return FALSE;
 }

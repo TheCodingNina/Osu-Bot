@@ -14,15 +14,7 @@ using namespace std;
 
 LPVOID GetTimeAddress() {
 	int pLevel = 5;
-	int threadOffset = -0x32C;
-	LPINT offsets = new int[5] {
-		0x50,
-		0x73C,
-		0x20,
-		0x4F0,
-		0x1EC
-	};
-
+	
 	DWORD osuProcessID = GetProcessID("osu!.exe");
 	osuProcessHandle = GetHandle(osuProcessID);
 
@@ -110,6 +102,7 @@ void AutoPlay(wstring nowPlaying) {
 	DrawTextToWindow(hWnd, statusText, rectStatus);
 
 	/* EventLog */	fprintf(wEventLog, "[EVENT]  AutoPlay thread finished.\n");
+	fflush(wEventLog);
 
 	songStarted = FALSE;
 }
@@ -150,6 +143,7 @@ void GameActiveChecker() {
 				}
 
 				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting AutoPlay thread!\n");
+				fflush(wEventLog);
 
 				thread AutoThread(AutoPlay, title);
 				AutoThread.detach();
@@ -188,6 +182,7 @@ void FindGame() {
 	osuWindow = FindWindowA(NULL, "osu!");
 	if (osuWindow == NULL) {
 		/* EventLog */	fprintf(wEventLog, "[WARNING]  The procces \"osu!\" was not found!\n");
+		fflush(wEventLog);
 
 		statusText = L"\"osu!\" NOT found!   Please start \"osu!\"...";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
@@ -200,12 +195,24 @@ void FindGame() {
 
 	/* EventLog */	fprintf(wEventLog, "[EVENT]  osu!.exe FOUND!\n");
 
+	if (threadOffset == 0x0) {
+		/* EventLog */	fprintf(wEventLog, "[WARNING]  Thread / Pointer Offsets not set!\n");
+		fflush(wEventLog);
+
+		statusText = L"Thread / Pointer Offsets not set!  Change it under Settings!";
+		DrawTextToWindow(hWnd, statusText, rectStatus);
+
+		while (threadOffset == 0x0) { Sleep(500); }
+	}
+
 	timeAddress = GetTimeAddress();
 
 	if (timeAddress == reinterpret_cast<LPVOID>(0xCCCCCCCC)
 		|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
 		CloseHandle(osuProcessHandle);
+
 		/* EventLog */	fprintf(wEventLog, "[WARNING]  timeAddres NOT FOUND!\n");
+		fflush(wEventLog);
 
 		statusText = L"timeAddress NOT found!   Please start \"osu!\" BEFORE starting \"Osu!Bot\"!";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
@@ -217,6 +224,7 @@ void FindGame() {
 	timeAddressString << "0x" << hex << (UINT)timeAddress;
 
 	/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" FOUND!  Starting Checker and Time threads!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+	fflush(wEventLog);
 
 	statusText = L"Waiting for user...";
 	DrawTextToWindow(hWnd, statusText, rectStatus);

@@ -34,8 +34,6 @@
 #include <psapi.h>
 #include <commctrl.h>
 
+#include "split_string.h"
 #include "DrawTextToWindow.h"
 #include "resource.h"
-#include "split_string.h"
-#include "vec2f.h"
-#include "HitObject.h"

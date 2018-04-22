@@ -130,6 +130,7 @@ DWORD GetProcessID(string exe) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 	if (hSnapshot == INVALID_HANDLE_VALUE) {
 		/* EventLog */	fprintf(wEventLog, "[ERROR]  Could not get a snapshot of the procces \"osu!\"!\n");
+		fflush(wEventLog);
 
 		statusText = L"Unable to get a Snapshot of the process!";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
