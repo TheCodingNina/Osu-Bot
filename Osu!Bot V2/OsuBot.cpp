@@ -95,7 +95,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (ReadFromConfigFile({ songsFolderPath })) {
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  SongsFolderPath get succesfull.\n");
-			pathSet = TRUE;
+			if (songsPath.compare(L"") != 0)
+				pathSet = TRUE;
+			else
+				pathSet = FALSE;
 		}
 		else {
 			/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
@@ -258,10 +261,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				DrawTextToWindow(hWnd, statusText, rectStatus);
 
 				/* EventLog */	fprintf(wEventLog, "[EVENT]  Songs Folder Successfully Selected.\n           or not changed.\n");
+
+				UpdateConfigFile({ songsFolderPath });
 			}
 			fflush(wEventLog);
-
-			UpdateConfigFile();
 
 			SendMessage(hwndButtonOpenSongFolder, WM_SETTEXT, 0, ((pathSet) ? (LPARAM(L"Change")) : (LPARAM(L"Select"))));
 			break;
@@ -362,20 +365,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		case IDM_SETTINGS:
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opened Settings.\n"); 
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_SETTINGSBOX), hWnd, Settings);
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opened Settings.\n");
 			fflush(wEventLog);
 			break;
 
 		case IDM_ABOUT:
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User opened about box.\n"); 
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User opened about box.\n");
 			fflush(wEventLog);
 			break;
 
 		case IDM_EXIT:
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Exited the program.\n"); 
 			DestroyWindow(hWnd);
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Exited the program.\n");
 			fflush(wEventLog);
 			break;
 
@@ -500,14 +503,33 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	UNREFERENCED_PARAMETER(lParam);
 	switch (message) {
 	case WM_INITDIALOG:
-		SetDlgItemTextW(hDlg, IDC_THREADOFFSET, (LPWSTR)threadOffset);
-		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET1, (LPWSTR)offsets[0]);
-		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET2, (LPWSTR)offsets[1]);
-		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET3, (LPWSTR)offsets[2]);
-		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET4, (LPWSTR)offsets[3]);
-		SetDlgItemTextW(hDlg, IDC_POINTEROFFSET5, (LPWSTR)offsets[4]);
-		return (INT_PTR)TRUE;
+	{		
+		for (int i = 0; i <= 5; i ++) {
+			int intValue;
+			string str = "";
+			stringstream stream;
+			stream << hex;
 
+			if (i == 0)
+				intValue = threadOffset;
+			else
+				intValue = offsets[i - 1];
+
+			if (intValue < 0) {
+				intValue *= -1;
+				stream << intValue;
+				str = "-";
+			}
+			else {
+				stream << intValue;
+			}
+
+			str += stream.str();
+
+			SetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), wstring(str.begin(), str.end()).c_str());
+		}
+		return (INT_PTR)TRUE;
+	}
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDOK) {
 			TCHAR offset[MAXCHAR];
@@ -544,7 +566,7 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 			// -32C  DC 7A8 64C 7C4 660
-			UpdateConfigFile();
+			UpdateConfigFile({ timerPointer });
 
 
 			/* EventLog */	fprintf(wEventLog, "            Settings are changed!\n");

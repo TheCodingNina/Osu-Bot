@@ -11,11 +11,36 @@ using namespace std;
 
 enum configurationSettings: char {
 	songsFolderPath = 's',
-	timerPointer = 'i'
+	timerPointer = 'h'
 };
 
 
 bool WriteToConfigFile(vector<string> configStrings);
+
+
+bool FillMap(map<string, LPVOID> &configValues, string &configString, const configurationSettings configurationSetting) {
+	switch (configurationSetting) {
+	case timerPointer:
+		configString = "[Timer Pointer]";
+		configValues["ThreadOffset"] = &threadOffset;
+		configValues["Offset0"] = &(offsets[0]);
+		configValues["Offset1"] = &(offsets[1]);
+		configValues["Offset2"] = &(offsets[2]);
+		configValues["Offset3"] = &(offsets[3]);
+		configValues["Offset4"] = &(offsets[4]);
+		break;
+
+	case songsFolderPath:
+		configString = "[Songs Folder Path]";
+		configValues["FolderPath"] = &songsPath;
+		break;
+
+	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
 
 
 bool CreateNewConfigFile() {
@@ -25,12 +50,12 @@ bool CreateNewConfigFile() {
 			"FolderPath : ",
 			"",
 			"[Timer Pointer]",
-			"ThreadOffset : -812",
-			"Offset0 : 220",
-			"Offset1 : 1960",
-			"Offset2 : 1612",
-			"Offset3 : 1988",
-			"Offset4 : 1632",
+			"Offset0 : dc",
+			"Offset1 : 7a8",
+			"Offset2 : 64c",
+			"Offset3 : 7c4",
+			"Offset4 : 660",
+			"ThreadOffset : -32c",
 			""
 		};
 
@@ -46,23 +71,115 @@ bool CreateNewConfigFile() {
 }
 
 
-bool UpdateConfigFile() {
-	try {
-		vector<string> configStrings = {
-			"[Songs Folder Path]",
-			("FolderPath : " + string(songsPath.begin(), songsPath.end())),
-			"",
-			"[Timer Pointer]",
-			("ThreadOffset : " + to_string(threadOffset)),
-			("Offset0 : " + to_string(offsets[0])),
-			("Offset1 : " + to_string(offsets[1])),
-			("Offset2 : " + to_string(offsets[2])),
-			("Offset3 : " + to_string(offsets[3])),
-			("Offset4 : " + to_string(offsets[4])),
-			""
-		};
+bool AddSettingString(string &settingString, const string configSetting, const LPVOID configValue, const configurationSettings configurationSetting) {
+	if (configurationSetting == 'i') {
+		int* settingValue = (int*)configValue;
+		settingString = configSetting + " : " + to_string(*settingValue);
+	}
+	else if (configurationSetting == 'h') {
+		stringstream ss;
+		int* settingValue = (int*)configValue;
+		int hexValue = *settingValue;
 
-		WriteToConfigFile(configStrings);
+		if (*settingValue < 0) {
+			hexValue *= -1;
+			ss << hex << hexValue;
+			settingString = configSetting + " : -" + string(ss.str());
+		}
+		else {
+			ss << hex << hexValue;
+			settingString = configSetting + " : " + string(ss.str());
+		}		
+	}
+	else if (configurationSetting == 's') {
+		wstring* settingValue = (wstring*)configValue;
+		wstring wValue = *settingValue;
+		settingString = configSetting + " : " + string(wValue.begin(), wValue.end());
+	}
+	else
+		return FALSE;
+	return TRUE;
+}
+
+bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
+	try {
+		string readLine;
+		vector<string> allConfigStrings;
+
+		for (configurationSettings configurationSetting : settingsList) {
+			string configString;
+			vector<string> configStrings;
+			map<string, LPVOID> configValues;
+
+			FillMap(configValues, configString, configurationSetting);
+
+			fstream configFile;
+			configFile.open("Data\\configFile.cfg", fstream::in | fstream::out);
+
+			while (!configFile.eof()) {
+				getline(configFile, readLine);
+
+				if (readLine.find(configString) != string::npos) {
+					configStrings.push_back(configString);
+					while (configValues.size() > 0 && (readLine.compare("") != 0 || readLine[0] == '[')) {
+						getline(configFile, readLine);
+
+						string configSetting = readLine.substr(0,
+							MIN(readLine.find_first_of(": "), readLine.find_first_of(" : ")));
+
+						string settingString;
+						auto settingFinder = configValues.find(configSetting);
+						if (settingFinder != configValues.end()) {
+							AddSettingString(settingString, configSetting, settingFinder->second, configurationSetting);
+
+							configValues.erase(settingFinder);
+						}
+						else {
+							settingString = readLine;
+						}
+						configStrings.push_back(settingString);
+					}
+					for (auto& configValue : configValues) {
+						string settingString; 
+						AddSettingString(settingString, configValue.first, configValue.second, configurationSetting);
+
+						configStrings.push_back(settingString);
+					}
+
+					configValues.clear();
+				}
+				else {
+					configStrings.push_back(readLine);
+				}
+			}
+
+			if (configValues.size() > 0) {
+				configStrings.push_back(configString);
+				for (auto& configValue : configValues) {
+					string settingString;
+
+					AddSettingString(settingString, configValue.first, configValue.second, configurationSetting);
+
+					configStrings.push_back(settingString);
+				}
+			}
+
+			configFile.close();
+
+			while (configStrings.at(0) == "")
+				configStrings.erase(configStrings.begin());
+			while (configStrings.at(configStrings.size() - 1) == "")
+				configStrings.pop_back();
+
+			configStrings.push_back("");
+
+			allConfigStrings.reserve(allConfigStrings.size() + configStrings.size());
+			allConfigStrings.insert(allConfigStrings.end(), configStrings.begin(), configStrings.end());
+		}
+		allConfigStrings.pop_back();
+
+		WriteToConfigFile(allConfigStrings);
+
 		return TRUE;
 	}
 	catch (const exception &e) {
@@ -79,31 +196,12 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 
 		for (configurationSettings configurationSetting : settingsList) {
 			string configString;
-			unordered_map<string, LPVOID> configValues;
+			map<string, LPVOID> configValues;
 
-			switch (configurationSetting) {
-			case timerPointer:
-				configString = "[Timer Pointer]";
-				configValues.emplace("ThreadOffset", &threadOffset);
-				configValues.emplace("Offset0", &offsets[0]);
-				configValues.emplace("Offset1", &offsets[1]);
-				configValues.emplace("Offset2", &offsets[2]);
-				configValues.emplace("Offset3", &offsets[3]);
-				configValues.emplace("Offset4", &offsets[4]);
-				break;
-
-			case songsFolderPath:
-				configString = "[Songs Folder Path]";
-				configValues.emplace("FolderPath", &songsPath);
-				break;
-
-			default:
-				return FALSE;
-			}
-
+			FillMap(configValues, configString, configurationSetting);
 
 			fstream configFile;
-			configFile.open("Data\\configFile.cfg", fstream::in || fstream::out);
+			configFile.open("Data\\configFile.cfg", fstream::in);
 
 			while (!configFile.eof() && readLine.find(configString) == string::npos) {
 				getline(configFile, readLine);
@@ -130,13 +228,29 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 					else
 						intValue = stoi(readLine.substr(valuePos));
 
-					int *configValue = (int*)configValues.at(configSetting);
+					int* configValue = (int*)(configValues.at(configSetting));
 					*configValue = intValue;
+				}
+				else if (configurationSetting == 'h') {
+					stringstream ss;
+					int hexValue;
+					if (readLine.at(valuePos) == '-') {
+						ss << hex << readLine.substr(valuePos + 1);
+						ss >> hexValue;
+						hexValue *= -1;
+					}
+					else {
+						ss << hex << readLine.substr(valuePos);
+						ss >> hexValue;
+					}
+
+					int* configValue = (int*)(configValues.at(configSetting));
+					*configValue = hexValue;
 				}
 				else if (configurationSetting == 's') {
 					string stringValue = readLine.substr(valuePos);
 
-					wstring *configValue = (wstring*)configValues.at(configSetting);
+					wstring* configValue = (wstring*)(configValues.at(configSetting));
 					*configValue = wstring(stringValue.begin(), stringValue.end());
 				}
 				else
@@ -163,6 +277,8 @@ bool WriteToConfigFile(vector<string> configStrings) {
 		for (string configString : configStrings) {
 			fprintf(wConfigFile, (configString + "\n").c_str());
 		}
+
+		fclose(wConfigFile);
 
 		return TRUE;
 	}

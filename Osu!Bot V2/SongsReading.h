@@ -428,8 +428,13 @@ bool OpenSongFolder() {
 	if (fopen("Data\\SFData.txt", "r"))
 		return TRUE;
 	else if (songsPath.empty()) {
-		ReadFromConfigFile({ songsFolderPath });
-		return TRUE;
+		if (ReadFromConfigFile({ songsFolderPath })) {
+			if (songsPath.compare(L"") != 0)
+				return TRUE;
+			else
+				return FALSE;
+		}
+		return FALSE;
 	}
 	else return FALSE;
 }

@@ -20,6 +20,7 @@
 
 // TODO: reference additional headers your program
 #define _USE_MATH_DEFINES
+#include <map>
 #include <ctime>
 #include <cmath>
 #include <sstream>
