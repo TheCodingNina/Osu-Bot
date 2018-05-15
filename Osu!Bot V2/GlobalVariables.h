@@ -72,11 +72,11 @@ bool
 songStarted,
 pathSet,
 autoOpenSong,
+hardrockFlip,
 altKey,
 inputFlip,
 inputKeyBoard = TRUE,
-firstStart = TRUE,
-nextObject = TRUE;
+firstStart = TRUE;
 
 
 string userSelect = "user.\n";

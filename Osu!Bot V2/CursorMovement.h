@@ -48,8 +48,6 @@ void MoveToStandard(HitObject *hitObject) {
 		this_thread::sleep_for(chrono::milliseconds(12));
 		SendKeyRelease(hitObject);
 	}
-
-	nextObject = TRUE;
 }
 
 void MoveToFlowing(vector<HitObject>* hitObjects, const int nObject) {
@@ -108,8 +106,6 @@ void MoveToFlowing(vector<HitObject>* hitObjects, const int nObject) {
 	}
 
 	pBack = pts.at(pts.size() - 2);
-
-	nextObject = TRUE;
 }
 
 void SliderStandard(HitObject *hitObject) {
@@ -128,8 +124,6 @@ void SliderStandard(HitObject *hitObject) {
 	}
 
 	SendKeyRelease(hitObject);
-
-	nextObject = TRUE;
 }
 
 void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
@@ -283,8 +277,6 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 
 	pBack = pts.at(pts.size() - 2);
 	pP = pts.at(pts.size() - 1 - cpCount);
-
-	nextObject = TRUE;
 }
 
 void SpinnerStandard(HitObject *hitObject) {
@@ -310,6 +302,4 @@ void SpinnerStandard(HitObject *hitObject) {
 	}
 
 	SendKeyRelease(hitObject);
-
-	nextObject = TRUE;
 }

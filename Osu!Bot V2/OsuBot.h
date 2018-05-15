@@ -45,10 +45,14 @@ void AutoPlay(wstring nowPlaying) {
 	prevInputTime = songTime;
 	SendMessage(hwndProgressBar, PBM_SETPOS, WPARAM(0), NULL);
 
+	if (hardrockFlip)
+		for (unsigned int i = 0; i < hitObjects.size(); i++) {
+			hitObjects.at(i).startPosition.y = 384.f - hitObjects.at(i).startPosition.y;
+		}
+
 	for (unsigned int nObject = 0; nObject < hitObjects.size(); nObject++) {
 		HitObject hit = hitObjects.at(nObject);
-		if (nextObject && songStarted) {
-			nextObject = FALSE;
+		if (songStarted) {
 
 			// Movement calls:
 			switch (modeMoveTo) {
@@ -88,7 +92,7 @@ void AutoPlay(wstring nowPlaying) {
 			SendMessage(hwndProgressBar, PBM_SETPOS, WPARAM(nObject), NULL);
 		}
 		else {
-			while (!nextObject | (!songStarted && !firstStart)) {
+			while (!songStarted && !firstStart) {
 				this_thread::sleep_for(chrono::microseconds(50));
 			}
 			nObject -= (UINT)2;

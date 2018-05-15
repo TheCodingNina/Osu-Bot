@@ -10,6 +10,7 @@ using namespace std;
 
 
 extern FILE *wEventLog;
+extern bool hardrockFlip;
 
 
 inline bool isIn(float a, float b, float c) {
@@ -39,7 +40,10 @@ inline vec2f PolyBezier(const vector<vec2f> &pts, const int &cp, const int &r, c
 	for (int i = 0; i <= cp; i++) {
 		float b = Bernstein(i, cp, t);
 		c.x += pts.at(i + (r * cp)).x * b;
-		c.y += pts.at(i + (r * cp)).y * b;
+		if (hardrockFlip)
+			c.y += (pts.at(i + (r * cp)).y) * b;
+		else
+			c.y += pts.at(i + (r * cp)).y * b;
 	} return c;
 }
 
@@ -167,6 +171,8 @@ public:
 
 		if (sliderType == 'P') {
 			float ang = lerp(startAng, endAng, t);
+			if (hardrockFlip)
+				return { circleCenter.x + radius * cosf(ang), 384.f - (circleCenter.y + radius * sinf(ang)) };
 			return { circleCenter.x + radius * cosf(ang), circleCenter.y + radius * sinf(ang) };
 		}
 
@@ -179,6 +185,8 @@ public:
 			/* EventLog */	fprintf(wEventLog, "[ERROR]  getPointByT --> oldPoint\n");
 			fflush(wEventLog);
 
+			if (hardrockFlip)
+				return vec2f(oldPoint.x, 384.f - oldPoint.y);
 			return oldPoint;
 		}
 
@@ -191,6 +199,8 @@ public:
 					currDist += (oldPoint - p).length();
 					
 					if (currDist > dist) {
+						if (hardrockFlip)
+							return vec2f(oldPoint.x, 384.f - oldPoint.y);
 						return oldPoint;
 					}
 					
@@ -204,11 +214,17 @@ public:
 
 				currDist += (oldPoint - p).length();
 				if (currDist > dist) {
+					if (hardrockFlip)
+						return vec2f(oldPoint.x, 384.f - oldPoint.y);
 					return oldPoint;
 				}
 				oldPoint = p;
 			}
-		} return oldPoint;
+		}
+
+		if (hardrockFlip)
+			return vec2f(oldPoint.x, 384.f - oldPoint.y);
+		return oldPoint;
 	}
 
 	HitObject(string hitstring, vector<TimingPoint> *timingPoints, float mapSliderMultiplier, float mapSliderTickRate) {

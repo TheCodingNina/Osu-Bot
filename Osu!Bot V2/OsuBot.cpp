@@ -7,6 +7,7 @@
 #define BTN_ButtonOpenSongFolder 3001
 #define BTN_ButtonOpenSongFile 3002
 #define CB_CheckBoxAutoOpenSong 3003
+#define CB_CheckBoxHardrockFlip 3004
 
 #include "stdafx.h"
 
@@ -28,6 +29,7 @@ HWND hWnd = NULL;
 HWND hwndButtonOpenSongFolder = NULL;
 HWND hwndButtonOpenSongFile = NULL;
 HWND hwndCheckBoxAutoOpenSong = NULL;
+HWND hwndCheckBoxHardrockFlip = NULL;
 wstring statusText = L"Start up...";
 wstring songsPath;
 bool songFileCheck;
@@ -117,6 +119,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			CreateNewConfigFile();
 
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  Config file generated.\n");
+
+			if (ReadFromConfigFile({ timerPointer }))
+				/* EventLog */	fprintf(wEventLog, "[EVENT]  TimerPointer get succesfull.\n");
+			else
+				/* EventLog */	fprintf(wEventLog, "[WARNING]  TimerPointer not specified!\n");
+
+			if (ReadFromConfigFile({ songsFolderPath })) {
+				/* EventLog */	fprintf(wEventLog, "[EVENT]  SongsFolderPath get succesfull.\n");
+				if (songsPath.compare(L"") != 0)
+					pathSet = TRUE;
+				else
+					pathSet = FALSE;
+			}
+			else {
+				/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
+				pathSet = FALSE;
+			}
 		}
 		else
 			/* EventLog */	fprintf(wEventLog, "[WARNING]  Config file was not auto generated.\n");
@@ -284,12 +303,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case CB_CheckBoxAutoOpenSong:
 		{
-			if (autoOpenSong) {
+			if (autoOpenSong)
 				autoOpenSong = FALSE;
-			}
-			else {
-				autoOpenSong = TRUE;
-			}
+			else autoOpenSong = TRUE;
 
 			string autoState = (autoOpenSong ? "Enabled" : "Disabled");
 			/* EventLog */	fprintf(wEventLog, ("[EVENT]  Auto opening of beatmap: " + autoState + "\n").c_str());
@@ -299,6 +315,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				statusText = L"Please select \"osu!\" Songs Folder for Osu!Bot to autosearch in for the beatmaps!";
 				DrawTextToWindow(hWnd, statusText, rectStatus);
 			}
+
+			break;
+		}
+		case CB_CheckBoxHardrockFlip:
+		{
+			if (hardrockFlip)
+				hardrockFlip = FALSE;
+			else hardrockFlip = TRUE;
+
+			string hardrockState = (hardrockFlip ? "Enabled" : "Disabled");
+			/* EventLog */	fprintf(wEventLog, ("[EVENT]  Hardrock mod: " + hardrockState + "\n").c_str());
+			fflush(wEventLog);
 
 			break;
 		}
@@ -465,6 +493,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
 			nullptr
 		);
+		
+		hwndCheckBoxHardrockFlip = CreateWindowEx(
+			NULL,
+			WC_BUTTON,
+			L"Hardrock (flip)",
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX,
+			10, 130,
+			140, 15,
+			hWnd,
+			(HMENU)CB_CheckBoxHardrockFlip,
+			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
+			nullptr
+		);
 
 		SendMessage(hwndCheckBoxAutoOpenSong, BM_SETCHECK, WPARAM(autoOpenSong), NULL);
 
@@ -565,8 +606,28 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 
 
-			// -32C  DC 7A8 64C 7C4 660
 			UpdateConfigFile({ timerPointer });
+			ReadFromConfigFile({ timerPointer });
+
+
+			timeAddress = GetTimeAddress();
+
+			if (timeAddress == reinterpret_cast<LPVOID>(0xCCCCCCCC)
+				|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
+				CloseHandle(osuProcessHandle);
+
+				/* EventLog */	fprintf(wEventLog, "[WARNING]  timeAddres NOT FOUND!\n");
+				fflush(wEventLog);
+
+				statusText = L"timeAddress NOT found!   Please use a correct timeAddress pointer.";
+				DrawTextToWindow(hWnd, statusText, rectStatus);
+			}
+
+			stringstream timeAddressString;
+			timeAddressString << "0x" << hex << (UINT)timeAddress;
+
+			/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" UPDATED!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+			fflush(wEventLog);
 
 
 			/* EventLog */	fprintf(wEventLog, "            Settings are changed!\n");
