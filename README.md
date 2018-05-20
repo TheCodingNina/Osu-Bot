@@ -5,9 +5,11 @@ USE THIS WITH RESPONSABLITY!!
 I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/RESTRICTED ON OSU!
 
 
+
 --- INSTALL INSTRUCTIONS ---
 1.	Unzip (anywhere you like.)
 2.	Execute (Osu!Bot V2.exe).
+
 
 
 --- USAGE INSTRUCTIONS ---
@@ -17,3 +19,15 @@ I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/
 3.	Check 'Auto Open Song'.
 4.	Play any map.
 5.	Play next map.
+
+
+
+--- TIMER POINTER ---
+ThreadOffset : -32C
+Offset0 : DC
+Offset1 : 750
+Offset2 : A0
+Offset3 : 684
+Offset4 : C8
+
+// NOTE: These values are in hexadecimal.
