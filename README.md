@@ -6,13 +6,8 @@ I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/
  
  
  
---- INSTALL INSTRUCTIONS ---
-1.	Unzip (anywhere you like.)
-2.	Execute (Osu!Bot V2.exe).
- 
- 
- 
 --- USAGE INSTRUCTIONS ---
+0.	Unzip anywhere you like.
 1.	Execute (Osu!Bot V2.exe).
 2.	Select osu! 'songs' folder (default location like: C:\Users\%USERNAME%\AppData\local\osu!\songs).
 		(Only needed on first start or after deletion of Osu!Bot Data Folder.)
