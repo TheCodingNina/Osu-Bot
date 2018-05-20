@@ -26,7 +26,8 @@
 #define IDC_POINTEROFFSET3              1008
 #define IDC_POINTEROFFSET4              1009
 #define IDC_POINTEROFFSET5              1010
-#define IDC_TAB1                        1011
+#define IDC_INPUTKEYMAIN                1011
+#define IDC_INPUTKEYALT                 1012
 #define ID_FILE_SETTINGS                32771
 #define ID_DSAFDF_SDF                   32772
 #define ID_DSAFDF_SDF32773              32773

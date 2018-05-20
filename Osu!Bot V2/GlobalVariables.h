@@ -45,6 +45,9 @@ POINT cursorPoint;
 
 INPUT input;
 
+WORD inputMainKey = 90;
+WORD inputAltKey = 88;
+
 vector<int> offsets(5);
 
 int threadOffset = 0x0;
@@ -75,8 +78,8 @@ autoOpenSong,
 hardrockFlip,
 altKey,
 inputFlip,
-inputKeyBoard = TRUE,
-firstStart = TRUE;
+inputKeyBoard = true,
+firstStart = true;
 
 
 string userSelect = "user.\n";

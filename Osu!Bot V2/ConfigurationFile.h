@@ -9,13 +9,36 @@
 using namespace std;
 
 
-enum configurationSettings: char {
-	songsFolderPath = 's',
-	timerPointer = 'h'
+//	int = 0 - 100
+//	hex = 100 - 200
+//	string = 200 - 300
+//	KeyCodes = 300 - 400
+enum configurationSettings: int {
+	songsFolderPath = 200,
+	inputKeys = 300,
+	timerPointer = 100
 };
 
 
-bool WriteToConfigFile(vector<string> configStrings);
+bool WriteToConfigFile(vector<string> configStrings) {
+	try {
+		FILE *wConfigFile = fopen("Data\\configFile.cfg", "w");
+
+		for (string configString : configStrings) {
+			fprintf(wConfigFile, (configString + "\n").c_str());
+		}
+
+		fclose(wConfigFile);
+
+		return TRUE;
+	}
+	catch (const exception &e) {
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't write to configuration file!\n            with error: " + (string)e.what()).c_str());
+		fflush(wEventLog);
+		return FALSE;
+	}
+	return FALSE;
+}
 
 
 bool FillMap(map<string, LPVOID> &configValues, string &configString, const configurationSettings configurationSetting) {
@@ -35,6 +58,12 @@ bool FillMap(map<string, LPVOID> &configValues, string &configString, const conf
 		configValues["FolderPath"] = &songsPath;
 		break;
 
+	case inputKeys:
+		configString = "[Input Keys]";
+		configValues["MainKey"] = &inputMainKey;
+		configValues["AltKey"] = &inputAltKey;
+		break;
+
 	default:
 		return FALSE;
 	}
@@ -51,11 +80,15 @@ bool CreateNewConfigFile() {
 			"",
 			"[Timer Pointer]",
 			"Offset0 : dc",
-			"Offset1 : 7a8",
-			"Offset2 : 64c",
-			"Offset3 : 7c4",
-			"Offset4 : 660",
+			"Offset1 : 750",
+			"Offset2 : a0",
+			"Offset3 : 684",
+			"Offset4 : c8",
 			"ThreadOffset : -32c",
+			"",
+			"[Input Keys] //Currently only works with non-special keys!",
+			"MainKey : Z",
+			"AltKey : X",
 			""
 		};
 
@@ -72,11 +105,11 @@ bool CreateNewConfigFile() {
 
 
 bool AddSettingString(string &settingString, const string configSetting, const LPVOID configValue, const configurationSettings configurationSetting) {
-	if (configurationSetting == 'i') {
+	if (0 <= configurationSetting && configurationSetting < 100) {
 		int* settingValue = (int*)configValue;
 		settingString = configSetting + " : " + to_string(*settingValue);
 	}
-	else if (configurationSetting == 'h') {
+	else if (100 <= configurationSetting && configurationSetting < 200) {
 		stringstream ss;
 		int* settingValue = (int*)configValue;
 		int hexValue = *settingValue;
@@ -91,10 +124,15 @@ bool AddSettingString(string &settingString, const string configSetting, const L
 			settingString = configSetting + " : " + string(ss.str());
 		}		
 	}
-	else if (configurationSetting == 's') {
+	else if (200 <= configurationSetting && configurationSetting < 300) {
 		wstring* settingValue = (wstring*)configValue;
 		wstring wValue = *settingValue;
 		settingString = configSetting + " : " + string(wValue.begin(), wValue.end());
+	}
+	else if (300 <= configurationSetting && configurationSetting < 400) {
+		int* settingValue = (int*)configValue;
+		char keyValue = (char)*settingValue;
+		settingString = configSetting + " : " + keyValue;
 	}
 	else
 		return FALSE;
@@ -219,7 +257,7 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 				UINT pos = readLine.find_first_of(":") + 1U;
 				UINT valuePos = readLine.at(pos) == ' ' ? pos + 1U : pos;
 
-				if (configurationSetting == 'i') {
+				if (0 <= configurationSetting && configurationSetting < 100) {
 					int intValue;
 					if (readLine.at(valuePos) == '-') {
 						intValue = stoi(readLine.substr(valuePos + 1));
@@ -231,7 +269,7 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 					int* configValue = (int*)(configValues.at(configSetting));
 					*configValue = intValue;
 				}
-				else if (configurationSetting == 'h') {
+				else if (100 <= configurationSetting && configurationSetting < 200) {
 					stringstream ss;
 					int hexValue;
 					if (readLine.at(valuePos) == '-') {
@@ -247,11 +285,18 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 					int* configValue = (int*)(configValues.at(configSetting));
 					*configValue = hexValue;
 				}
-				else if (configurationSetting == 's') {
+				else if (200 <= configurationSetting && configurationSetting < 300) {
 					string stringValue = readLine.substr(valuePos);
 
 					wstring* configValue = (wstring*)(configValues.at(configSetting));
 					*configValue = wstring(stringValue.begin(), stringValue.end());
+				}
+				else if (300 <= configurationSetting && configurationSetting < 400) {
+					string stringValue = readLine.substr(valuePos);
+					int KeyValue = (int)stringValue[0];
+
+					int* configValue = (int*)(configValues.at(configSetting));
+					*configValue = KeyValue;
 				}
 				else
 					return FALSE;
@@ -264,26 +309,6 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 	}
 	catch (const exception &e) {
 		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't read from configuration file!\n            with error: " + (string)e.what()).c_str());
-		fflush(wEventLog);
-		return FALSE;
-	}
-	return FALSE;
-}
-
-bool WriteToConfigFile(vector<string> configStrings) {
-	try {
-		FILE *wConfigFile = fopen("Data\\configFile.cfg", "w");
-
-		for (string configString : configStrings) {
-			fprintf(wConfigFile, (configString + "\n").c_str());
-		}
-
-		fclose(wConfigFile);
-
-		return TRUE;
-	}
-	catch (const exception &e) {
-		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't write to configuration file!\n            with error: " + (string)e.what()).c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}

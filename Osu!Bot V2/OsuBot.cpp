@@ -34,10 +34,6 @@ wstring statusText = L"Start up...";
 wstring songsPath;
 bool songFileCheck;
 
-// Standard Variables for input Keys:
-WORD inputMainKey = 0xBC;
-WORD inputAltKey = 0xBE;
-
 // Standard Variables for UI:
 wstring songsFolderText = L"Select \"osu!\" Songs Folder.";
 wstring songFileText = L"Select an \"osu! beatmap\"";
@@ -106,6 +102,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
 			pathSet = FALSE;
 		}
+
+		if (ReadFromConfigFile({ inputKeys }))
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  InputKeys get succesfull.\n");
+		else
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  InputKeys not specified!\n");
 	}
 	else {
 		/* EventLog */	fprintf(wEventLog, "[WARNING]  ConfigFile not found!\n");
@@ -136,6 +137,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
 				pathSet = FALSE;
 			}
+
+			if (ReadFromConfigFile({ inputKeys }))
+				/* EventLog */	fprintf(wEventLog, "[EVENT]  InputKeys get succesfull.\n");
+			else
+				/* EventLog */	fprintf(wEventLog, "[WARNING]  InputKeys not specified!\n");
 		}
 		else
 			/* EventLog */	fprintf(wEventLog, "[WARNING]  Config file was not auto generated.\n");
@@ -569,13 +575,34 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			SetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), wstring(str.begin(), str.end()).c_str());
 		}
+
+
+		WCHAR keyString;
+
+		keyString = (WCHAR)inputMainKey;
+		SetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYMAIN), &keyString);
+
+		keyString = (WCHAR)inputAltKey;
+		SetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYALT), &keyString);
+
+
 		return (INT_PTR)TRUE;
 	}
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDOK) {
-			TCHAR offset[MAXCHAR];
-			bool subtrating = FALSE;
+			WCHAR key[MAXCHAR];
 
+			GetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYMAIN), (LPWSTR)key, MAXCHAR);
+			inputMainKey = wstring(key)[0];
+
+			GetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYALT), (LPWSTR)key, MAXCHAR);
+			inputAltKey = wstring(key)[0];
+
+			UpdateConfigFile({ inputKeys });
+
+
+			WCHAR offset[MAXCHAR];
+			bool subtrating = FALSE;
 
 			for (int i = 0; i <= 5; i++) {
 				GetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), (LPWSTR)offset, MAXCHAR);
@@ -642,7 +669,8 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
-		} break;
+		}
+		break;
 	} return (INT_PTR)FALSE;
 }
 
