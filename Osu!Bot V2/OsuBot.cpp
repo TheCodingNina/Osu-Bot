@@ -3,7 +3,6 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-#define NUMLINES 200
 #define MAX_LOADSTRING 100
 #define BTN_ButtonOpenSongFolder 3001
 #define BTN_ButtonOpenSongFile 3002
@@ -553,8 +552,8 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		for (int i = 0; i <= 5; i++) {
 			int intValue;
-			string str = "";
-			stringstream stream;
+			wstring str = L"";
+			wstringstream stream;
 			stream << hex;
 
 			if (i == 0)
@@ -565,7 +564,7 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (intValue < 0) {
 				intValue *= -1;
 				stream << intValue;
-				str = "-";
+				str = L"-";
 			}
 			else {
 				stream << intValue;
@@ -573,51 +572,54 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			str += stream.str();
 
-			SetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), wstring(str.begin(), str.end()).c_str());
+			SetWindowText(GetDlgItem(hDlg, IDC_THREADOFFSET + i), LPCTSTR(str.c_str()));
 		}
 
-		/*
-		LPCWSTR& str = (LPCWSTR&)L"Keyboard";
-		SendDlgItemMessageW(hDlg, IDC_INPUTMETHODE, CB_ADDSTRING, NULL, (LPARAM)&str);
-		*/
+		
+		
+		LPCTSTR& inputKeyboard = (LPCTSTR&)L"Keyboard";
+		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_ADDSTRING, NULL, (LPARAM)&inputKeyboard);
+		LPCTSTR& inputMouse = (LPCTSTR&)L"Mouse";
+		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_ADDSTRING, NULL, (LPARAM)&inputMouse);
+		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_SETCURSEL, NULL, (LPARAM)!inputKeyBoard);
 
-		WCHAR keyString;
 
-		keyString = (WCHAR)inputMainKey;
-		SetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYMAIN), &keyString);
+		LPCTSTR str;
 
-		keyString = (WCHAR)inputAltKey;
-		SetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYALT), &keyString);
+		str = (LPCTSTR)(TCHAR)inputMainKey;
+		SetDlgItemText(hDlg, IDC_INPUTKEYMAIN, str);
+		str = (LPCTSTR)(TCHAR)inputAltKey;
+		SetDlgItemText(hDlg, IDC_INPUTKEYALT, str);
 
 
 		return (INT_PTR)TRUE;
 	}
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDOK) {
-			WCHAR key[MAXCHAR];
+			TCHAR key[MAXCHAR];
 
-			GetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYMAIN), (LPWSTR)key, MAXCHAR);
+			GetWindowText(GetDlgItem(hDlg, IDC_INPUTKEYMAIN), (LPTSTR)key, MAXCHAR);
 			inputMainKey = wstring(key)[0];
 
-			GetWindowTextW(GetDlgItem(hDlg, IDC_INPUTKEYALT), (LPWSTR)key, MAXCHAR);
+			GetWindowText(GetDlgItem(hDlg, IDC_INPUTKEYALT), (LPTSTR)key, MAXCHAR);
 			inputAltKey = wstring(key)[0];
 
 			UpdateConfigFile({ inputKeys });
 
 
-			WCHAR offset[MAXCHAR];
+			TCHAR offset[MAXCHAR];
 			bool subtrating = FALSE;
 
 			for (int i = 0; i <= 5; i++) {
-				GetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), (LPWSTR)offset, MAXCHAR);
+				GetWindowText(GetDlgItem(hDlg, IDC_THREADOFFSET + i), (LPTSTR)offset, MAXCHAR);
 				wstring wOffset = wstring(offset);
 
 				if (wOffset[0] == '-') {
 					subtrating = TRUE;
 				}
 
-				string tOffset = string(wOffset.begin() + (int)subtrating, wOffset.end());
-				stringstream stream;
+				wstring tOffset = wstring(wOffset.begin() + (int)subtrating, wOffset.end());
+				wstringstream stream;
 				stream << hex << tOffset;
 
 				if (i == 0) {
