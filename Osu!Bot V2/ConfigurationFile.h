@@ -9,14 +9,11 @@
 using namespace std;
 
 
-//	int = 0 - 100
-//	hex = 100 - 200
-//	string = 200 - 300
-//	KeyCodes = 300 - 400
-enum configurationSettings: int {
-	songsFolderPath = 200,
-	inputKeys = 300,
-	timerPointer = 100
+enum configurationSettings: char {
+	songsFolderPath = 's',
+	inputKeys = 'k',
+	inputMethode = 'b',
+	timerPointer = 'h'
 };
 
 
@@ -64,6 +61,11 @@ bool FillMap(map<string, LPVOID> &configValues, string &configString, const conf
 		configValues["AltKey"] = &inputAltKey;
 		break;
 
+	case inputMethode:
+		configString = "[Input Methode]";
+		configValues["UseKeyboard"] = &inputKeyBoard;
+		break;
+
 	default:
 		return FALSE;
 	}
@@ -86,6 +88,9 @@ bool CreateNewConfigFile() {
 			"Offset4 : c8",
 			"ThreadOffset : -32c",
 			"",
+			"[Input Methode]",
+			"UseKeyboard : true",
+			"",
 			"[Input Keys] //Currently only works with non-special keys!",
 			"MainKey : Z",
 			"AltKey : X",
@@ -105,11 +110,11 @@ bool CreateNewConfigFile() {
 
 
 bool AddSettingString(string &settingString, const string configSetting, const LPVOID configValue, const configurationSettings configurationSetting) {
-	if (0 <= configurationSetting && configurationSetting < 100) {
+	if (configurationSetting == 'i') {
 		int* settingValue = (int*)configValue;
 		settingString = configSetting + " : " + to_string(*settingValue);
 	}
-	else if (100 <= configurationSetting && configurationSetting < 200) {
+	else if (configurationSetting == 'h') {
 		stringstream ss;
 		int* settingValue = (int*)configValue;
 		int hexValue = *settingValue;
@@ -124,15 +129,21 @@ bool AddSettingString(string &settingString, const string configSetting, const L
 			settingString = configSetting + " : " + string(ss.str());
 		}		
 	}
-	else if (200 <= configurationSetting && configurationSetting < 300) {
+	else if (configurationSetting == 's') {
 		wstring* settingValue = (wstring*)configValue;
 		wstring wValue = *settingValue;
 		settingString = configSetting + " : " + string(wValue.begin(), wValue.end());
 	}
-	else if (300 <= configurationSetting && configurationSetting < 400) {
+	else if (configurationSetting == 'k') {
 		int* settingValue = (int*)configValue;
-		char keyValue = (char)*settingValue;
+		char keyValue = *settingValue;
 		settingString = configSetting + " : " + keyValue;
+	}
+	else if (configurationSetting == 'b') {
+		bool* settingValue = (bool*)configValue;
+		bool boolValue = *settingValue;
+		string boolString = (boolValue ? "true" : "false");
+		settingString = configSetting + " : " + boolString;
 	}
 	else
 		return FALSE;
@@ -257,7 +268,7 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 				UINT pos = readLine.find_first_of(":") + 1U;
 				UINT valuePos = readLine.at(pos) == ' ' ? pos + 1U : pos;
 
-				if (0 <= configurationSetting && configurationSetting < 100) {
+				if (configurationSetting == 'i') {
 					int intValue;
 					if (readLine.at(valuePos) == '-') {
 						intValue = stoi(readLine.substr(valuePos + 1));
@@ -269,7 +280,7 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 					int* configValue = (int*)(configValues.at(configSetting));
 					*configValue = intValue;
 				}
-				else if (100 <= configurationSetting && configurationSetting < 200) {
+				else if (configurationSetting == 'h') {
 					stringstream ss;
 					int hexValue;
 					if (readLine.at(valuePos) == '-') {
@@ -285,18 +296,32 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 					int* configValue = (int*)(configValues.at(configSetting));
 					*configValue = hexValue;
 				}
-				else if (200 <= configurationSetting && configurationSetting < 300) {
+				else if (configurationSetting == 's') {
 					string stringValue = readLine.substr(valuePos);
 
 					wstring* configValue = (wstring*)(configValues.at(configSetting));
 					*configValue = wstring(stringValue.begin(), stringValue.end());
 				}
-				else if (300 <= configurationSetting && configurationSetting < 400) {
-					string stringValue = readLine.substr(valuePos);
-					int KeyValue = (int)stringValue[0];
+				else if (configurationSetting == 'k') {
+					char charValue = readLine.substr(valuePos)[0];
+					int KeyValue = (int)charValue;
 
 					int* configValue = (int*)(configValues.at(configSetting));
 					*configValue = KeyValue;
+				}
+				else if (configurationSetting == 'b') {
+					string stringValue = readLine.substr(valuePos);
+
+					bool boolValue;
+					if (stringValue[0] == 't' || stringValue[0] == 'T')
+						boolValue = TRUE;
+					else if (stringValue[0] == 'f' || stringValue[0] == 'F')
+						boolValue = FALSE;
+					else
+						boolValue = FALSE;
+
+					bool* configValue = (bool*)(configValues.at(configSetting));
+					*configValue = boolValue;
 				}
 				else
 					return FALSE;

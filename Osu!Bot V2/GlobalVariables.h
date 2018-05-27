@@ -78,7 +78,7 @@ autoOpenSong,
 hardrockFlip,
 altKey,
 inputFlip,
-inputKeyBoard = true,
+inputKeyBoard,
 firstStart = true;
 
 

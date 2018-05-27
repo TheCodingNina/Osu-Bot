@@ -3,6 +3,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
+#define NUMLINES 200
 #define MAX_LOADSTRING 100
 #define BTN_ButtonOpenSongFolder 3001
 #define BTN_ButtonOpenSongFile 3002
@@ -399,19 +400,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		case IDM_SETTINGS:
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opened Settings.\n"); 
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opened Settings.\n");
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_SETTINGSBOX), hWnd, Settings);
 			fflush(wEventLog);
 			break;
 
 		case IDM_ABOUT:
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User opened about box.\n"); 
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User opened about box.\n");
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			fflush(wEventLog);
 			break;
 
 		case IDM_EXIT:
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Exited the program.\n"); 
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Exited the program.\n");
 			DestroyWindow(hWnd);
 			fflush(wEventLog);
 			break;
@@ -499,7 +500,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
 			nullptr
 		);
-		
+
 		hwndCheckBoxHardrockFlip = CreateWindowEx(
 			NULL,
 			WC_BUTTON,
@@ -547,11 +548,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 // Message handler for settings box.
 INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
-	UNREFERENCED_PARAMETER(lParam);
 	switch (message) {
 	case WM_INITDIALOG:
-	{		
-		for (int i = 0; i <= 5; i ++) {
+	{
+		for (int i = 0; i <= 5; i++) {
 			int intValue;
 			string str = "";
 			stringstream stream;
@@ -576,6 +576,10 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			SetWindowTextW(GetDlgItem(hDlg, IDC_THREADOFFSET + i), wstring(str.begin(), str.end()).c_str());
 		}
 
+		/*
+		LPCWSTR& str = (LPCWSTR&)L"Keyboard";
+		SendDlgItemMessageW(hDlg, IDC_INPUTMETHODE, CB_ADDSTRING, NULL, (LPARAM)&str);
+		*/
 
 		WCHAR keyString;
 
