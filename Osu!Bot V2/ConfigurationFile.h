@@ -12,7 +12,7 @@ using namespace std;
 enum configurationSettings: char {
 	songsFolderPath = 's',
 	inputKeys = 'k',
-	inputMethode = 'b',
+	inputMethod = 'b',
 	timerPointer = 'h'
 };
 
@@ -61,8 +61,8 @@ bool FillMap(map<string, LPVOID> &configValues, string &configString, const conf
 		configValues["AltKey"] = &inputAltKey;
 		break;
 
-	case inputMethode:
-		configString = "[Input Methode]";
+	case inputMethod:
+		configString = "[Input Method]";
 		configValues["UseKeyboard"] = &inputKeyBoard;
 		break;
 
@@ -105,7 +105,6 @@ bool CreateNewConfigFile() {
 		fflush(wEventLog);
 		return FALSE;
 	}
-	return FALSE;
 }
 
 
@@ -127,7 +126,7 @@ bool AddSettingString(string &settingString, const string configSetting, const L
 		else {
 			ss << hex << hexValue;
 			settingString = configSetting + " : " + string(ss.str());
-		}		
+		}
 	}
 	else if (configurationSetting == 's') {
 		wstring* settingValue = (wstring*)configValue;
@@ -136,7 +135,7 @@ bool AddSettingString(string &settingString, const string configSetting, const L
 	}
 	else if (configurationSetting == 'k') {
 		int* settingValue = (int*)configValue;
-		char keyValue = *settingValue;
+		char keyValue = (char)*settingValue;
 		settingString = configSetting + " : " + keyValue;
 	}
 	else if (configurationSetting == 'b') {
@@ -174,7 +173,7 @@ bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
 						getline(configFile, readLine);
 
 						string configSetting = readLine.substr(0,
-							MIN(readLine.find_first_of(": "), readLine.find_first_of(" : ")));
+							MIN(readLine.find_first_of(":"), readLine.find_first_of(" ")));
 
 						string settingString;
 						auto settingFinder = configValues.find(configSetting);
@@ -189,7 +188,7 @@ bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
 						configStrings.push_back(settingString);
 					}
 					for (auto& configValue : configValues) {
-						string settingString; 
+						string settingString;
 						AddSettingString(settingString, configValue.first, configValue.second, configurationSetting);
 
 						configStrings.push_back(settingString);
@@ -224,10 +223,13 @@ bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
 
 			allConfigStrings.reserve(allConfigStrings.size() + configStrings.size());
 			allConfigStrings.insert(allConfigStrings.end(), configStrings.begin(), configStrings.end());
-		}
-		allConfigStrings.pop_back();
 
-		WriteToConfigFile(allConfigStrings);
+			allConfigStrings.pop_back();
+
+			WriteToConfigFile(allConfigStrings);
+
+			allConfigStrings.clear();
+		}
 
 		return TRUE;
 	}
@@ -236,99 +238,100 @@ bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
 		fflush(wEventLog);
 		return FALSE;
 	}
-	return FALSE;
 }
 
-bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
+bool UpdateConfigFile(const configurationSettings &setting) {
+	return UpdateConfigFile(vector<configurationSettings>(setting));
+}
+
+bool ReadFromConfigFile(const configurationSettings &setting) {
 	try {
 		string readLine;
 
-		for (configurationSettings configurationSetting : settingsList) {
-			string configString;
-			map<string, LPVOID> configValues;
+		string configString;
+		map<string, LPVOID> configValues;
 
-			FillMap(configValues, configString, configurationSetting);
+		FillMap(configValues, configString, setting);
 
-			fstream configFile;
-			configFile.open("Data\\configFile.cfg", fstream::in);
+		fstream configFile;
+		configFile.open("Data\\configFile.cfg", fstream::in);
 
-			while (!configFile.eof() && readLine.find(configString) == string::npos) {
-				getline(configFile, readLine);
-			}
+		while (!configFile.eof() && readLine.find(configString) == string::npos) {
+			getline(configFile, readLine);
+		}
 
-			if (readLine.empty() && configFile.eof())
-				return FALSE;
+		if (readLine.empty() && configFile.eof())
+			return FALSE;
 
 
-			for (unsigned int i = 0; i < configValues.size(); i++) {
-				getline(configFile, readLine);
-				string configSetting = readLine.substr(0,
-					MIN(readLine.find_first_of(" "), readLine.find_first_of(":")) - 1);
+		for (unsigned int i = 0; i < configValues.size(); i++) {
+			getline(configFile, readLine);
+			string configSetting = readLine.substr(0,
+				MIN(readLine.find_first_of(" "), readLine.find_first_of(":")) - 1);
 
-				UINT pos = readLine.find_first_of(":") + 1U;
-				UINT valuePos = readLine.at(pos) == ' ' ? pos + 1U : pos;
+			UINT pos = readLine.find_first_of(":") + 1U;
+			UINT valuePos = readLine.at(pos) == ' ' ? pos + 1U : pos;
 
-				if (configurationSetting == 'i') {
-					int intValue;
-					if (readLine.at(valuePos) == '-') {
-						intValue = stoi(readLine.substr(valuePos + 1));
-						intValue *= -1;
-					}
-					else
-						intValue = stoi(readLine.substr(valuePos));
-
-					int* configValue = (int*)(configValues.at(configSetting));
-					*configValue = intValue;
-				}
-				else if (configurationSetting == 'h') {
-					stringstream ss;
-					int hexValue;
-					if (readLine.at(valuePos) == '-') {
-						ss << hex << readLine.substr(valuePos + 1);
-						ss >> hexValue;
-						hexValue *= -1;
-					}
-					else {
-						ss << hex << readLine.substr(valuePos);
-						ss >> hexValue;
-					}
-
-					int* configValue = (int*)(configValues.at(configSetting));
-					*configValue = hexValue;
-				}
-				else if (configurationSetting == 's') {
-					string stringValue = readLine.substr(valuePos);
-
-					wstring* configValue = (wstring*)(configValues.at(configSetting));
-					*configValue = wstring(stringValue.begin(), stringValue.end());
-				}
-				else if (configurationSetting == 'k') {
-					char charValue = readLine.substr(valuePos)[0];
-					int KeyValue = (int)charValue;
-
-					int* configValue = (int*)(configValues.at(configSetting));
-					*configValue = KeyValue;
-				}
-				else if (configurationSetting == 'b') {
-					string stringValue = readLine.substr(valuePos);
-
-					bool boolValue;
-					if (stringValue[0] == 't' || stringValue[0] == 'T')
-						boolValue = TRUE;
-					else if (stringValue[0] == 'f' || stringValue[0] == 'F')
-						boolValue = FALSE;
-					else
-						boolValue = FALSE;
-
-					bool* configValue = (bool*)(configValues.at(configSetting));
-					*configValue = boolValue;
+			if (setting == 'i') {
+				int intValue;
+				if (readLine.at(valuePos) == '-') {
+					intValue = stoi(readLine.substr(valuePos + 1));
+					intValue *= -1;
 				}
 				else
-					return FALSE;
-			}
+					intValue = stoi(readLine.substr(valuePos));
 
-			configFile.close();
+				int* configValue = (int*)(configValues.at(configSetting));
+				*configValue = intValue;
+			}
+			else if (setting == 'h') {
+				stringstream ss;
+				int hexValue;
+				if (readLine.at(valuePos) == '-') {
+					ss << hex << readLine.substr(valuePos + 1);
+					ss >> hexValue;
+					hexValue *= -1;
+				}
+				else {
+					ss << hex << readLine.substr(valuePos);
+					ss >> hexValue;
+				}
+
+				int* configValue = (int*)(configValues.at(configSetting));
+				*configValue = hexValue;
+			}
+			else if (setting == 's') {
+				string stringValue = readLine.substr(valuePos);
+
+				wstring* configValue = (wstring*)(configValues.at(configSetting));
+				*configValue = wstring(stringValue.begin(), stringValue.end());
+			}
+			else if (setting == 'k') {
+				char charValue = readLine.substr(valuePos)[0];
+				int KeyValue = (int)charValue;
+
+				int* configValue = (int*)(configValues.at(configSetting));
+				*configValue = KeyValue;
+			}
+			else if (setting == 'b') {
+				string stringValue = readLine.substr(valuePos);
+
+				bool boolValue;
+				if (stringValue[0] == 't' || stringValue[0] == 'T')
+					boolValue = TRUE;
+				else if (stringValue[0] == 'f' || stringValue[0] == 'F')
+					boolValue = FALSE;
+				else
+					boolValue = FALSE;
+
+				bool* configValue = (bool*)(configValues.at(configSetting));
+				*configValue = boolValue;
+			}
+			else
+				return FALSE;
 		}
+
+		configFile.close();
 
 		return TRUE;
 	}
@@ -337,5 +340,42 @@ bool ReadFromConfigFile(const vector<configurationSettings> &settingsList) {
 		fflush(wEventLog);
 		return FALSE;
 	}
-	return FALSE;
+}
+
+bool ReadAllConfigSettings() {
+	try {
+		if (ReadFromConfigFile(timerPointer))
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  TimerPointer get succesfull.\n");
+		else
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  TimerPointer not specified!\n");
+
+		if (ReadFromConfigFile(songsFolderPath)) {
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  SongsFolderPath get succesfull.\n");
+			if (songsPath.compare(L"") != 0)
+				pathSet = TRUE;
+			else
+				pathSet = FALSE;
+		}
+		else {
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
+			pathSet = FALSE;
+		}
+
+		if (ReadFromConfigFile(inputKeys))
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  InputKeys get succesfull.\n");
+		else
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  InputKeys not specified!\n");
+
+		if (ReadFromConfigFile(inputMethod))
+			/* EventLog */	fprintf(wEventLog, "[EVENT]  InputMethod get succesfull.\n");
+		else
+			/* EventLog */	fprintf(wEventLog, "[WARNING]  InputMethod not specified!\n");
+
+		return TRUE;
+	}
+	catch (const exception &e) {
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't read from configuration file!\n            with error: " + (string)e.what()).c_str());
+		fflush(wEventLog);
+		return FALSE;
+	}
 }

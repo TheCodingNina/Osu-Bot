@@ -38,8 +38,6 @@ bool songFileCheck;
 wstring songsFolderText = L"Select \"osu!\" Songs Folder.";
 wstring songFileText = L"Select an \"osu! beatmap\"";
 
-int nHeight = 290;
-int nWidth = 585;
 RECT rectOsuBotWindow;
 RECT rectSongsFolder = { 10, 10, nWidth - 140, 50 };
 RECT rectSongFile = { 10, 80, nWidth - 140, 120 };
@@ -86,27 +84,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (fopen("Data\\configFile.cfg", "r")) {
 		/* EventLog */	fprintf(wEventLog, "[EVENT]  ConfigFile found.\n");
 
-		if (ReadFromConfigFile({ timerPointer }))
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  TimerPointer get succesfull.\n");
-		else
-			/* EventLog */	fprintf(wEventLog, "[WARNING]  TimerPointer not specified!\n");
-
-		if (ReadFromConfigFile({ songsFolderPath })) {
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  SongsFolderPath get succesfull.\n");
-			if (songsPath.compare(L"") != 0)
-				pathSet = TRUE;
-			else
-				pathSet = FALSE;
-		}
-		else {
-			/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
-			pathSet = FALSE;
-		}
-
-		if (ReadFromConfigFile({ inputKeys }))
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  InputKeys get succesfull.\n");
-		else
-			/* EventLog */	fprintf(wEventLog, "[WARNING]  InputKeys not specified!\n");
+		ReadAllConfigSettings();
 	}
 	else {
 		/* EventLog */	fprintf(wEventLog, "[WARNING]  ConfigFile not found!\n");
@@ -118,30 +96,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (configMB == IDYES) {
 			CreateNewConfigFile();
-
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  Config file generated.\n");
 
-			if (ReadFromConfigFile({ timerPointer }))
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  TimerPointer get succesfull.\n");
-			else
-				/* EventLog */	fprintf(wEventLog, "[WARNING]  TimerPointer not specified!\n");
-
-			if (ReadFromConfigFile({ songsFolderPath })) {
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  SongsFolderPath get succesfull.\n");
-				if (songsPath.compare(L"") != 0)
-					pathSet = TRUE;
-				else
-					pathSet = FALSE;
-			}
-			else {
-				/* EventLog */	fprintf(wEventLog, "[WARNING]  SongsFolderPath not specified!\n");
-				pathSet = FALSE;
-			}
-
-			if (ReadFromConfigFile({ inputKeys }))
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  InputKeys get succesfull.\n");
-			else
-				/* EventLog */	fprintf(wEventLog, "[WARNING]  InputKeys not specified!\n");
+			ReadAllConfigSettings();
 		}
 		else
 			/* EventLog */	fprintf(wEventLog, "[WARNING]  Config file was not auto generated.\n");
@@ -196,7 +153,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_OSUBOTV2));
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_OSUBOTV2);
+	wcex.lpszMenuName = MAKEINTRESOURCE(IDC_OSUBOTV2);
 	wcex.lpszClassName = szWindowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -216,7 +173,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	hInst = hInstance; // Store instance handle in our global variable
 
-	hWnd = CreateWindowW(
+	hWnd = CreateWindow(
 		szWindowClass,
 		szTitle,
 		WS_SYSMENU | WS_MINIMIZEBOX | WS_SIZEBOX |
@@ -287,7 +244,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 				/* EventLog */	fprintf(wEventLog, "[EVENT]  Songs Folder Successfully Selected.\n           or not changed.\n");
 
-				UpdateConfigFile({ songsFolderPath });
+				UpdateConfigFile(songsFolderPath);
 			}
 			fflush(wEventLog);
 
@@ -377,7 +334,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case IDM_CLEARDATA:
 		{
-			int clearDataMB = MessageBoxW(hWnd,
+			int clearDataMB = MessageBox(hWnd,
 				L"Osu!Bot will clear/clean up all collected data.\nNOTE: this will not clear the current log file and config file!\n\nAre you sure you want to delete the data files?",
 				L"Delete Osu!Bot data files?",
 				MB_ICONWARNING | MB_YESNO | MB_APPLMODAL);
@@ -462,7 +419,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		);
 
 		// Buttons
-		hwndButtonOpenSongFolder = CreateWindowW(
+		hwndButtonOpenSongFolder = CreateWindow(
 			WC_BUTTON,
 			pathSet ? L"Change" : L"Select",
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_FLAT,
@@ -474,7 +431,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			nullptr
 		);
 
-		hwndButtonOpenSongFile = CreateWindowW(
+		hwndButtonOpenSongFile = CreateWindow(
 			WC_BUTTON,
 			songFileCheck ? L"Change" : L"Select",
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_FLAT,
@@ -531,6 +488,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 		SendMessage(hwndProgressBar, PBM_SETRANGE, NULL, MAKELPARAM(0, hitObjects.size() + 1));
 		SendMessage(hwndProgressBar, PBM_SETSTEP, WPARAM(1), NULL);
+		SendMessage(hwndProgressBar, PBM_SETPOS, WPARAM(objectNumber), NULL);
 
 		// TODO END;
 		EndPaint(hWnd, &ps);
@@ -547,6 +505,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 // Message handler for settings box.
 INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	UNREFERENCED_PARAMETER(lParam);
 	switch (message) {
 	case WM_INITDIALOG:
 	{
@@ -572,9 +531,8 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			str += stream.str();
 
-			SetWindowText(GetDlgItem(hDlg, IDC_THREADOFFSET + i), LPCTSTR(str.c_str()));
+			SetDlgItemText(hDlg, IDC_THREADOFFSET + i, LPCTSTR(str.c_str()));
 		}
-
 		
 		
 		LPCTSTR& inputKeyboard = (LPCTSTR&)L"Keyboard";
@@ -584,29 +542,33 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_SETCURSEL, NULL, (LPARAM)!inputKeyBoard);
 
 
-		LPCTSTR str;
+		TCHAR str;
 
-		str = (LPCTSTR)(TCHAR)inputMainKey;
-		SetDlgItemText(hDlg, IDC_INPUTKEYMAIN, str);
-		str = (LPCTSTR)(TCHAR)inputAltKey;
-		SetDlgItemText(hDlg, IDC_INPUTKEYALT, str);
+		str = (TCHAR)inputMainKey;
+		SetDlgItemTextW(hDlg, IDC_INPUTKEYMAIN, &str);
+		str = (TCHAR)inputAltKey;
+		SetDlgItemTextW(hDlg, IDC_INPUTKEYALT, &str);
 
 
 		return (INT_PTR)TRUE;
 	}
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDOK) {
+			TCHAR method[MAXCHAR];
+
+			GetDlgItemText(hDlg, IDC_INPUTMETHODE, (LPTSTR)method, MAXCHAR);
+			inputKeyBoard = _tcscmp(method, L"Keyboard") == 0 ? TRUE : FALSE;
+
+
 			TCHAR key[MAXCHAR];
 
-			GetWindowText(GetDlgItem(hDlg, IDC_INPUTKEYMAIN), (LPTSTR)key, MAXCHAR);
+			GetDlgItemText(hDlg, IDC_INPUTKEYMAIN, (LPTSTR)key, MAXCHAR);
 			inputMainKey = wstring(key)[0];
 
-			GetWindowText(GetDlgItem(hDlg, IDC_INPUTKEYALT), (LPTSTR)key, MAXCHAR);
+			GetDlgItemText(hDlg, IDC_INPUTKEYALT, (LPTSTR)key, MAXCHAR);
 			inputAltKey = wstring(key)[0];
 
-			UpdateConfigFile({ inputKeys });
-
-
+			
 			TCHAR offset[MAXCHAR];
 			bool subtrating = FALSE;
 
@@ -637,11 +599,10 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 				}
 			}
+			
 
-
-			UpdateConfigFile({ timerPointer });
-			ReadFromConfigFile({ timerPointer });
-
+			UpdateConfigFile({ inputMethod, inputKeys, timerPointer });
+			
 
 			timeAddress = GetTimeAddress();
 

@@ -261,7 +261,7 @@ bool OpenSongAuto(wstring title) {
 		case '>':
 			beatmapName.at(i) = '-';
 		case '*':
-			beatmapName.at(i) = '_';
+			beatmapName.at(i) = '-';
 		case ':':
 			beatmapName.at(i) = '_';
 		}

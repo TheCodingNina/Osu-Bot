@@ -50,6 +50,12 @@ WORD inputAltKey = 88;
 
 vector<int> offsets(5);
 
+int
+nHeight = 290,
+nWidth = 585;
+
+int objectNumber;
+
 int threadOffset = 0x0;
 
 int osuWindowX, osuWindowY;
@@ -94,6 +100,4 @@ extern WORD inputMainKey;
 extern WORD inputAltKey;
 extern RECT rectStatus;
 extern RECT rectSongFile;
-extern int nHeight;
-extern int nWidth;
 #pragma endregion
