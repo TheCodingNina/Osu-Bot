@@ -39,11 +39,8 @@ inline vec2f PolyBezier(const vector<vec2f> &pts, const int &cp, const int &r, c
 	vec2f c;
 	for (int i = 0; i <= cp; i++) {
 		float b = Bernstein(i, cp, t);
+		c.y += pts.at(i + (r * cp)).y * b;
 		c.x += pts.at(i + (r * cp)).x * b;
-		if (hardrockFlip)
-			c.y += (pts.at(i + (r * cp)).y) * b;
-		else
-			c.y += pts.at(i + (r * cp)).y * b;
 	} return c;
 }
 

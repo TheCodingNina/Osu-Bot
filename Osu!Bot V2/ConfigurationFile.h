@@ -269,9 +269,11 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 			string configSetting = readLine.substr(0,
 				MIN(readLine.find_first_of(" "), readLine.find_first_of(":")) - 1);
 
-			UINT pos = readLine.find_first_of(":") + 1U;
-			UINT valuePos = readLine.at(pos) == ' ' ? pos + 1U : pos;
-
+			UINT valuePos = readLine.find_first_of(":") + 1U;
+			while (readLine.at(valuePos) == ' ') {
+				valuePos++;
+			}
+			
 			if (setting == 'i') {
 				int intValue;
 				if (readLine.at(valuePos) == '-') {

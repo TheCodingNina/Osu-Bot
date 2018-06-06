@@ -13,14 +13,12 @@ using namespace std;
 
 
 LPVOID GetTimeAddress() {
-	int pLevel = 5;
-	
 	DWORD osuProcessID = GetProcessID("osu!.exe");
 	osuProcessHandle = GetHandle(osuProcessID);
 
 	LPVOID threadAddress = reinterpret_cast<LPVOID>((GetThreadStack(osuProcessHandle, ThreadList(osuProcessID)))[0] + threadOffset);
 
-	return GetAddress(osuProcessHandle, threadAddress, pLevel, offsets);
+	return GetAddress(osuProcessHandle, threadAddress, 5, offsets);
 }
 
 
@@ -95,7 +93,7 @@ void AutoPlay(wstring nowPlaying) {
 			while (!songStarted && !firstStart) {
 				this_thread::sleep_for(chrono::microseconds(50));
 			}
-			nObject -= (UINT)2;
+			nObject -= 2U;
 		}
 		this_thread::sleep_for(chrono::microseconds(50));
 	}
@@ -135,7 +133,7 @@ void GameActiveChecker() {
 		osuWindowY = w.y + yOffset;
 
 		TCHAR titleC[MAXCHAR];
-		GetWindowTextW(osuWindow, (LPWSTR)titleC, MAXCHAR);
+		GetWindowTextW(osuWindow, (LPTSTR)titleC, MAXCHAR);
 		wstring title(titleC);
 
 		if (title != L"osu!" && title != L"" && pathSet) {
@@ -227,7 +225,7 @@ void FindGame() {
 	stringstream timeAddressString;
 	timeAddressString << "0x" << hex << (UINT)timeAddress;
 
-	/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" FOUND!  Starting Checker and Time threads!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+	/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" FOUND!  Starting GameChecker and Time threads!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
 	fflush(wEventLog);
 
 	statusText = L"Waiting for user...";

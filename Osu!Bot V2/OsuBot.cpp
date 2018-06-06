@@ -543,11 +543,10 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 		TCHAR str;
-
 		str = (TCHAR)inputMainKey;
-		SetDlgItemTextW(hDlg, IDC_INPUTKEYMAIN, &str);
+		SendDlgItemMessage(hDlg, IDC_INPUTKEYMAIN, WM_SETTEXT, NULL, (LPARAM)&str);
 		str = (TCHAR)inputAltKey;
-		SetDlgItemTextW(hDlg, IDC_INPUTKEYALT, &str);
+		SendDlgItemMessage(hDlg, IDC_INPUTKEYALT, WM_SETTEXT, NULL, (LPARAM)&str);
 
 
 		return (INT_PTR)TRUE;
