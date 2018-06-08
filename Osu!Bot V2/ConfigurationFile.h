@@ -30,7 +30,7 @@ bool WriteToConfigFile(vector<string> configStrings) {
 		return TRUE;
 	}
 	catch (const exception &e) {
-		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't write to configuration file!\n            with error: " + (string)e.what()).c_str());
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't write to configuration file!\n            with error: " + (string)e.what() + "\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -101,7 +101,7 @@ bool CreateNewConfigFile() {
 		return TRUE;
 	}
 	catch (const exception &e) {
-		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't create a configuration file!\n            with error: " + (string)e.what()).c_str());
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't create a configuration file!\n            with error: " + (string)e.what() + "\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -234,7 +234,7 @@ bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
 		return TRUE;
 	}
 	catch (const exception &e) {
-		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't update a configuration file!\n            with error: " + (string)e.what()).c_str());
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't update a configuration file!\n            with error: " + (string)e.what() + "\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -338,7 +338,7 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 		return TRUE;
 	}
 	catch (const exception &e) {
-		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't read from configuration file!\n            with error: " + (string)e.what()).c_str());
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't read from configuration file!\n            with error: " + (string)e.what() + "\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -376,7 +376,7 @@ bool ReadAllConfigSettings() {
 		return TRUE;
 	}
 	catch (const exception &e) {
-		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't read from configuration file!\n            with error: " + (string)e.what()).c_str());
+		/* EventLog */	fprintf(wEventLog, ("[ERROR]  Couldn't read from configuration file!\n            with error: " + (string)e.what() + "\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}

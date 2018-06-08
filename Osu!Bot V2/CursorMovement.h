@@ -25,6 +25,24 @@ vector<vec2f> FindControlPoints(vec2f vec1, vec2f vec2, vec2f vec3) {
 	return { p0, p1 };
 }
 
+float SliderTime(HitObject *hitObject, float *offset) {
+	float t = static_cast<float>(songTime - hitObject->getStartTime()) / static_cast<float>(hitObject->getSliderTime());
+	t = t > hitObject->getSliderRepeatCount() - 0.01f ? hitObject->getSliderRepeatCount() - 0.01f : t;
+
+	*offset = floorf(t * hitObject->getSliderTickCount());
+/*
+	float tick = (*offset + 1.f) / (hitObject->getSliderTickCount() * floorf(t + 1.f));
+	tick = tick > hitObject->getSliderTickCount() * floorf(t + 1.f) ? floorf(t + 1.f) + 1.f : tick;
+	*offset = t > tick ? *offset + 1.f : *offset;
+*/
+	float T = t * hitObject->getSliderTickCount() - *offset;
+
+	///* EventLog */	fprintf(wEventLog, ("[DEBUG]  SliderTime: " + to_string(t) + "\n" + "              Floor: " + to_string(*offset) + "\n").c_str());
+	//fflush(wEventLog);
+
+	return T;
+}
+
 
 void MoveToStandard(HitObject *hitObject) {
 	GetCursorPos(&cursorPoint);
@@ -59,11 +77,22 @@ void MoveToFlowing(vector<HitObject>* hitObjects, const int nObject) {
 		p0 = vec2f((pE - pBack) + pE);
 	}
 
-	pP = nObject == 0 ? vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y)) : vec2f((hitObjects->at(nObject - 1).getEndPos().x - stackOffset * hitObjects->at(nObject - 1).getStack()) * multiplierX + osuWindowX,
+	if (nObject == 0)
+		pP = vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y));
+	else if (hitObjects->at(nObject - 1).getHitType() == HIT_SLIDER) {
+		float tP = hitObjects->at(nObject - 1).getSliderTickCount() * hitObjects->at(nObject - 1).getSliderRepeatCount() - 1.f;
+		pP = vec2f(((hitObjects->at(nObject - 1).getPointByT(tP).x - hitObjects->at(nObject - 1).getStack() * stackOffset) * multiplierX) + osuWindowX,
+			((hitObjects->at(nObject - 1).getPointByT(tP).y - hitObjects->at(nObject - 1).getStack() * stackOffset) * multiplierY) + osuWindowY);
+	}
+	else
+		pP = vec2f((hitObjects->at(nObject - 1).getEndPos().x - stackOffset * hitObjects->at(nObject - 1).getStack()) * multiplierX + osuWindowX,
 		(hitObjects->at(nObject - 1).getEndPos().y - stackOffset * hitObjects->at(nObject - 1).getStack()) * multiplierY + osuWindowY);
+
 	pB = vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y));
+
 	pE = vec2f((hitObjects->at(nObject).getStartPos().x - stackOffset * hitObjects->at(nObject).getStack()) * multiplierX + osuWindowX,
 		(hitObjects->at(nObject).getStartPos().y - stackOffset * hitObjects->at(nObject).getStack()) * multiplierY + osuWindowY);
+
 	pN = nObject + 1 == static_cast<signed int>(hitObjects->size()) ? pE : vec2f((hitObjects->at(nObject + 1).getStartPos().x - stackOffset * hitObjects->at(nObject + 1).getStack()) * multiplierX + osuWindowX,
 		(hitObjects->at(nObject + 1).getStartPos().y - stackOffset * hitObjects->at(nObject + 1).getStack()) * multiplierY + osuWindowY);
 
@@ -73,20 +102,22 @@ void MoveToFlowing(vector<HitObject>* hitObjects, const int nObject) {
 			((hitObjects->at(nObject + 1).getPointByT(tN).y - hitObjects->at(nObject + 1).getStack() * stackOffset) * multiplierY) + osuWindowY);
 	}
 
+
 	if (nObject == 0)
 		p0 = FindControlPoints(pP, pB, pE).at(0);
 
-
-
-	if ((pN - pE).length() < (1.f / circleSize) * 400.f && (pE - pB).length() < (1.f / circleSize) * 400.f) {
+	if ((pN - pE).length() < (1.f / circleSize) * 400.f && (pE - pB).length() < (1.f / circleSize) * 400.f
+		|| (pE - pB).length() < (1.f / circleSize) * 400.f) {
 		p0 = vec2f((pE - pBack).dev((pN - pE).length() * ((1.f / circleSize) * 400.f) + 1.f) + pE);
 	}
+
 
 	vec2f p1 = FindControlPoints(pB, pE, pN).at(1);
 
 	vector<vec2f> pts {
 		pB, p0, p1, pE
 	};
+
 
 	float dt = static_cast<float>(hitObjects->at(nObject).getStartTime() - songTime);
 	while (songTime < hitObjects->at(nObject).getStartTime() && songStarted) {
@@ -130,12 +161,10 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 	GetCursorPos(&cursorPoint);
 
 	int cpCount = 3;
-
 	int nPolyCount = 0;
-	int nPolyCountReverse;
-	int nPoly = 0;
+	int nPolyCountReverse = 0;
 	vector<vec2f> pts;
-	pts.resize(static_cast<unsigned int>(ceilf(hitObjects->at(nObject).getSliderTickCount()) * hitObjects->at(nObject).getSliderRepeatCount() * static_cast<float>(cpCount)) + (UINT)1);
+	pts.resize(static_cast<unsigned int>(ceilf(hitObjects->at(nObject).getSliderTickCount()) * hitObjects->at(nObject).getSliderRepeatCount() * static_cast<float>(cpCount)) + 1U);
 
 	vec2f pPBack = pP;
 	vec2f pNBack = pN;
@@ -164,11 +193,9 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 					((hitObjects->at(nObject).getPointByT(tB).y - hitObjects->at(nObject).getStack() * stackOffset) * multiplierY) + osuWindowY);
 				pts.at(nPolyCount) = pB;
 
-				//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 				pts.at(nPolyCount + 1) = vec2f((pts.at(nPolyCount) - pBack) + pts.at(nPolyCount));
 			}
 
-			//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 			pts.at(nPolyCount + 2) = FindControlPoints(pts.at(nPolyCount), pE, pN).at(1);
 			pts.at(nPolyCount + cpCount) = pE;
 
@@ -202,11 +229,9 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 							((hitObjects->at(nObject).getPointByT(tB).y - hitObjects->at(nObject).getStack() * stackOffset) * multiplierY) + osuWindowY);
 						pts.at(nPolyCount) = pB;
 
-						//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 						pts.at(nPolyCount + 1) = vec2f((pts.at(nPolyCount) - pBack) + pts.at(nPolyCount));
 					}
 
-					//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 					pts.at(nPolyCount + 2) = FindControlPoints(pts.at(nPolyCount), pE, pN).at(1);
 					pts.at(nPolyCount + cpCount) = pE;
 
@@ -234,7 +259,6 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 						pN = pPBack;
 					}
 
-					//pts.at(nPolyCount + 1) = FindControlPoints(pP, pts.at(nPolyCount), pE).at(0);
 					pts.at(nPolyCount + 2) = FindControlPoints(pts.at(nPolyCount), pE, pN).at(1);
 					pts.at(nPolyCount + cpCount) = pE;
 
@@ -248,25 +272,13 @@ void SliderFlowing(vector<HitObject> *hitObjects, const int nObject) {
 	SendKeyPress(&hitObjects->at(nObject));
 
 	while (songTime < hitObjects->at(nObject).getEndTime() && songStarted) {
-		float t = static_cast<float>(songTime - hitObjects->at(nObject).getStartTime()) / static_cast<float>(hitObjects->at(nObject).getSliderTime());
+		float offset = 0.f;
+		float t = SliderTime(&hitObjects->at(nObject), &offset);
 
-		float floor = floorf(t);
-		t = static_cast<int>(floor) % 2 == 0 ? t - floor : floor + 1.f - t;
+		if (songTime >= hitObjects->at(nObject).getEndTime() || !songStarted)
+			continue;
 
-		float T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
-		if (T > 1.002f) {
-			++nPoly;
-			T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
-		}
-		else if (T <= -0.002f) {
-			--nPoly;
-			T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
-		}
-
-		if (T > 1.f) { T = 1.f; }
-		else if (T < 0.f) { T = 0.f; }
-
-		pCursor = PolyBezier(pts, cpCount, nPoly, T);
+		pCursor = PolyBezier(pts, cpCount, static_cast<int>(offset), t);
 
 		SetCursorPos(static_cast<int>(pCursor.x), static_cast<int>(pCursor.y));
 
