@@ -60,18 +60,36 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 	// TODO: Place user added startup code here.
-	CreateDirectory(LPCWSTR(L"Data"), NULL);
+	CreateDirectory(LPCTSTR(L"Data"), NULL);
+	CreateDirectory(LPCTSTR(L"Data\\Logs"), NULL);
 
 
-	if (fopen("Data\\Events.log", "r")) {
-		DeleteFile(L"Data\\Events_OLD.log");
-		experimental::filesystem::copy("Data\\Events.log", "Data\\Events_OLD.log");
-		_fcloseall();
+	FILE* rEventLog = fopen("Data\\Logs\\Events.log", "r");
+	if (rEventLog != NULL) {
+		CHAR buff[MAX_LOADSTRING];
+		fgets(buff, MAX_LOADSTRING, rEventLog);
+		
+		string timestamp(buff);
+		timestamp.assign(timestamp.begin() + 22U, timestamp.end() - 1U);
+
+		for (unsigned int i = 0; i < timestamp.size() - 1; i++)
+			if (timestamp.at(i) == ':')
+				timestamp.at(i) = '.';
+
+		string backupLog = ("Data\\Logs\\Events (" + timestamp + ").log");
+		
+		FILE* bEventLog = fopen(&backupLog[0], "w");
+
+		fputs(buff, bEventLog);
+		while (!feof(rEventLog))
+			if (fgets(buff, MAX_LOADSTRING, rEventLog) != NULL)
+				fputs(buff, bEventLog);
+		fflush(bEventLog);
 	}
 
-	wEventLog = fopen("Data\\Events.log", "w");
+	wEventLog = fopen("Data\\Logs\\Events.log", "w");
 	if (wEventLog == NULL) { DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox); }
-
+	
 	time_t timeStamp = time(nullptr);
 	string timeString = asctime(localtime(&timeStamp));
 	timeString.erase(timeString.end() - 1, timeString.end());
@@ -343,7 +361,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			DeleteFile(L"Data\\SFData.txt");
 			DeleteFile(L"Data\\BMData.txt");
-			DeleteFile(L"Data\\Events_OLD.log");
+			DeleteFile(L"Data\\Logs\\Events_OLD.log"); //Needs review
 
 			/* EventLog */	fprintf(wEventLog, "[EVENT]  User cleared data Files.\n");
 			fflush(wEventLog);
