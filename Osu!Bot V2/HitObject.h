@@ -49,7 +49,7 @@ inline vec2f PolyBezier(const vector<vec2f> &pts, const int &cp, const int &r, c
 
 inline vec2f Intersect(vec2f a, vec2f ta, vec2f b, vec2f tb) {
 	float des = tb.x * ta.y - tb.y * ta.x;
-	if (abs(des) < 0.00001f) { /* EventLog */  fprintf(wEventLog, "[ERROR]  Intersect --> Vectors are parallel.\n"); fflush(wEventLog); }
+	if (abs(des) < 0.00001f) { /* EventLog */  fwprintf(wEventLog, L"[ERROR]  Intersect --> Vectors are parallel.\n"); fflush(wEventLog); }
 	float u = ((b.y - a.y) * ta.x + (a.x - b.x) * ta.y) / des;
 	return b.cpy().add(tb.x * u, tb.y * u);
 }
@@ -72,8 +72,8 @@ class TimingPoint {
 	int TimingTime;
 	float BPM;
 public:
-	explicit TimingPoint(string TimingString) {
-		auto tokens = split_string(TimingString, ",");
+	explicit TimingPoint(wstring TimingString) {
+		auto tokens = split_string(TimingString, L",");
 		TimingTime = stoi(tokens.at(0));
 		BPM = stof(tokens.at(1));
 	}
@@ -111,7 +111,7 @@ public:
 		repeatCount,
 		sliderTickCount,
 		timingPointMultiplier;
-	char sliderType;
+	wchar_t sliderType;
 	
 	int getHitType() {
 		if ((hitType & 2) > 0)
@@ -182,7 +182,7 @@ public:
 		vec2f oldPoint;
 		try { oldPoint = sliderSegments.at(0).points.at(0); }
 		catch (...) {
-			/* EventLog */	fprintf(wEventLog, "[ERROR]  getPointByT --> oldPoint\n");
+			/* EventLog */	fwprintf(wEventLog, L"[ERROR]  getPointByT --> oldPoint\n");
 			fflush(wEventLog);
 
 			if (hardrockFlip)
@@ -227,11 +227,11 @@ public:
 		return oldPoint;
 	}
 
-	HitObject(string hitstring, vector<TimingPoint> *timingPoints, float mapSliderMultiplier, float mapSliderTickRate) {
-		auto tokens = split_string(hitstring, ",");
+	HitObject(wstring hitstring, vector<TimingPoint> *timingPoints, float mapSliderMultiplier, float mapSliderTickRate) {
+		auto tokens = split_string(hitstring, L",");
 		startPosition = vec2f(stof(tokens.at(0)), stof(tokens.at(1)));
 		startTime = stoi(tokens.at(2));
-		hitType = atoi(tokens.at(3).c_str());
+		hitType = _wtoi(tokens.at(3).c_str());
 
 		if (getHitType() == HIT_SLIDER) {
 			beatLengthBase = timingPoints->at(0).getBPM();
@@ -258,9 +258,9 @@ public:
 
 			sliderPoints.push_back(startPosition);
 
-			auto sliderTokens = split_string(tokens.at(5), "|");
+			auto sliderTokens = split_string(tokens.at(5), L"|");
 			for (int i = 1; i < static_cast<int>(sliderTokens.size()); i++) {
-				auto p = split_string(sliderTokens.at(i), ":");
+				auto p = split_string(sliderTokens.at(i), L":");
 				vec2f point(stof(p.at(0)), stof(p.at(1)));
 				sliderPoints.push_back(point);
 			}
@@ -270,7 +270,7 @@ public:
 
 			sliderType = sliderTokens[0].c_str()[0];
 
-			if (sliderType == 'L' || sliderType == 'C') {
+			if (sliderType == L'L' || sliderType == L'C') {
 				for (int i = 1; i < static_cast<int>(sliderPoints.size()); i++) {
 					Segment seg;
 					seg.points = { sliderPoints.at(i - 1), sliderPoints.at(i) };
@@ -278,7 +278,7 @@ public:
 					sliderSegments.push_back(seg);
 				}
 			}
-			else if (sliderType == 'P' && sliderPoints.size() == 3) {
+			else if (sliderType == L'P' && sliderPoints.size() == 3) {
 				vec2f start = sliderPoints.at(0);
 				vec2f mid = sliderPoints.at(1);
 				vec2f end = sliderPoints.at(2);
@@ -310,7 +310,7 @@ public:
 					else if (abs(startAng - (endAng - TWO_PI)) < TWO_PI && isIn(startAng, midAng, endAng - TWO_PI))
 						endAng -= TWO_PI;
 					else {
-						/* EventLog */	fprintf(wEventLog, ("[ERROR]  Angle error: (" + to_string(startAng) + ", " + to_string(midAng) + ", " + to_string(endAng) + ")\n").c_str());
+						/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Angle error: (" + to_wstring(startAng) + L", " + to_wstring(midAng) + L", " + to_wstring(endAng) + L")\n").c_str());
 						fflush(wEventLog);
 					}
 				}
@@ -322,7 +322,7 @@ public:
 				radiusP = radius;
 			}
 			else {
-				sliderType = 'B';
+				sliderType = L'B';
 				vector<vector<vec2f>> curveList;
 				vector<vec2f> curve;
 
@@ -343,7 +343,7 @@ public:
 				}
 			}
 		}
-		else if (getHitType() == HIT_SPINNER) endTime = atoi(tokens.at(5).c_str());
+		else if (getHitType() == HIT_SPINNER) endTime = _wtoi(tokens.at(5).c_str());
 	}
 
 	~HitObject() {}

@@ -25,7 +25,7 @@ enum THREADINFOCLASS {
 
 
 LPVOID GetBaseAddress(HANDLE hProcess, HANDLE hThread) {
-	LPCWSTR moduleName = L"ntdll.dll";
+	LPCTSTR moduleName = L"ntdll.dll";
 	bool loadedManually = false;
 
 
@@ -129,7 +129,7 @@ HANDLE GetHandle(DWORD processId) {
 DWORD GetProcessID(string exe) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 	if (hSnapshot == INVALID_HANDLE_VALUE) {
-		/* EventLog */	fprintf(wEventLog, "[ERROR]  Could not get a snapshot of the procces \"osu!\"!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[ERROR]  Could not get a snapshot of the procces \"osu!\"!\n");
 		fflush(wEventLog);
 
 		statusText = L"Unable to get a Snapshot of the process!";
@@ -154,7 +154,7 @@ DWORD GetProcessID(string exe) {
 	return NULL;
 }
 
-LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel, vector<int> offsets) {
+LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel) {
 	int address = reinterpret_cast<int>(baseAddress);
 
 	for (int i = 0; i < pLevel; i++) {
@@ -165,6 +165,6 @@ LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel, vector
 	return reinterpret_cast<LPVOID>(address);
 }
 
-LPVOID GetAddress(HANDLE processHandle, LPVOID baseAddress, int pLevel, vector<int> offsets) {
-	return FindPointerAddress(processHandle, baseAddress, pLevel, offsets);
+LPVOID GetAddress(HANDLE processHandle, LPVOID baseAddress, int pLevel) {
+	return FindPointerAddress(processHandle, baseAddress, pLevel);
 }

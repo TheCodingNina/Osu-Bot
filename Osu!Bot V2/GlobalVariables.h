@@ -88,8 +88,8 @@ inputKeyBoard,
 firstStart = true;
 
 
-string userSelect = "user.\n";
-string autoSelect = "Osu!Bot.\n";
+wstring userSelect = L"user.\n";
+wstring autoSelect = L"Osu!Bot.\n";
 
 extern wstring songsPath;
 extern wstring statusText;

@@ -87,25 +87,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		fflush(bEventLog);
 	}
 
-	wEventLog = fopen("Data\\Logs\\Events.log", "w");
+	wEventLog = _wfopen(L"Data\\Logs\\Events.log", L"w");
 	if (wEventLog == NULL) { DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox); }
 	
 	time_t timeStamp = time(nullptr);
-	string timeString = asctime(localtime(&timeStamp));
+	wstring timeString = _wasctime(localtime(&timeStamp));
 	timeString.erase(timeString.end() - 1, timeString.end());
-	string logString = "Events.log created at " + timeString;
+	wstring logString = L"Events.log created at " + timeString;
 
-	/* EventLog */	fprintf(wEventLog, (logString + "\n").c_str());
+	/* EventLog */	fwprintf(wEventLog, (logString + L"\n").c_str());
 	fflush(wEventLog);
 
 
-	if (fopen("Data\\configFile.cfg", "r")) {
-		/* EventLog */	fprintf(wEventLog, "[EVENT]  ConfigFile found.\n");
+	if (_wfopen(L"Data\\configFile.cfg", L"r")) {
+		/* EventLog */	fwprintf(wEventLog, L"[EVENT]  ConfigFile found.\n");
 
 		ReadAllConfigSettings();
 	}
 	else {
-		/* EventLog */	fprintf(wEventLog, "[WARNING]  ConfigFile not found!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  ConfigFile not found!\n");
 
 		int configMB = MessageBoxW(hWnd,
 			L"No config file was found!\nDo you want to generate a new config file?\n\nIf this doesn't work try manualy creating an empty file named \"configFile.cfg\" under the \"Data\" folder.",
@@ -114,12 +114,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (configMB == IDYES) {
 			CreateNewConfigFile();
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  Config file generated.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Config file generated.\n");
 
 			ReadAllConfigSettings();
 		}
 		else
-			/* EventLog */	fprintf(wEventLog, "[WARNING]  Config file was not auto generated.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  Config file was not auto generated.\n");
 	}
 	fflush(wEventLog);
 
@@ -223,7 +223,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 //  WM_DESTROY  - post a quit message and return
 //
 //
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	switch (message) {
 	case WM_GETMINMAXINFO:
@@ -242,25 +242,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			SendMessage(hwndButtonOpenSongFolder, WM_SETTEXT, 0, LPARAM(L"..."));
 
 			statusText = L"Selecting Songs Folder...";
-			DrawTextToWindow(hWnd, statusText, rectStatus);
+			DrawTextToWindow(hwnd, statusText, rectStatus);
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User selecting/changing Songs Folder.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User selecting/changing Songs Folder.\n");
 			fflush(wEventLog);
 
 			pathSet = OpenSongFolder();
 
 			if (!pathSet) {
 				statusText = L"No Songs Folder Selected!";
-				DrawTextToWindow(hWnd, statusText, rectStatus);
+				DrawTextToWindow(hwnd, statusText, rectStatus);
 
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  No Songs folder Selected.\n");
+				/* EventLog */	fwprintf(wEventLog, L"[EVENT]  No Songs folder Selected.\n");
 			}
 			else {
-				DrawTextToWindow(hWnd, songsPath.c_str(), rectSongsFolder);
+				DrawTextToWindow(hwnd, songsPath.c_str(), rectSongsFolder);
 				statusText = L"Songs Folder Successfully Selected!";
-				DrawTextToWindow(hWnd, statusText, rectStatus);
+				DrawTextToWindow(hwnd, statusText, rectStatus);
 
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  Songs Folder Successfully Selected.\n           or not changed.\n");
+				/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Songs Folder Successfully Selected.\n           or not changed.\n");
 
 				UpdateConfigFile(songsFolderPath);
 			}
@@ -274,7 +274,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			SendMessage(hwndButtonOpenSongFile, WM_SETTEXT, 0, LPARAM(L"..."));
 
 			statusText = L"Selecting a Beatmap...";
-			DrawTextToWindow(hWnd, statusText, rectStatus);
+			DrawTextToWindow(hwnd, statusText, rectStatus);
 
 			songFileCheck = OpenSongManual();
 			SongFileCheck(songFileCheck, userSelect);
@@ -288,13 +288,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				autoOpenSong = FALSE;
 			else autoOpenSong = TRUE;
 
-			string autoState = (autoOpenSong ? "Enabled" : "Disabled");
-			/* EventLog */	fprintf(wEventLog, ("[EVENT]  Auto opening of beatmap: " + autoState + "\n").c_str());
+			wstring autoState = (autoOpenSong ? L"Enabled" : L"Disabled");
+			/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  Auto opening of beatmap: " + autoState + L"\n").c_str());
 			fflush(wEventLog);
 
 			if (autoOpenSong && !pathSet) {
 				statusText = L"Please select \"osu!\" Songs Folder for Osu!Bot to autosearch in for the beatmaps!";
-				DrawTextToWindow(hWnd, statusText, rectStatus);
+				DrawTextToWindow(hwnd, statusText, rectStatus);
 			}
 
 			break;
@@ -305,8 +305,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 				hardrockFlip = FALSE;
 			else hardrockFlip = TRUE;
 
-			string hardrockState = (hardrockFlip ? "Enabled" : "Disabled");
-			/* EventLog */	fprintf(wEventLog, ("[EVENT]  Hardrock mod: " + hardrockState + "\n").c_str());
+			wstring hardrockState = (hardrockFlip ? L"Enabled" : L"Disabled");
+			/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  Hardrock mod: " + hardrockState + L"\n").c_str());
 			fflush(wEventLog);
 
 			break;
@@ -314,46 +314,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		case ID_DATAFILES_OPENDATAFOLDER:
 		{
 			if ((LONG)ShellExecute(NULL, LPCTSTR(L"explore"), LPCTSTR(L"Data"), NULL, NULL, SW_SHOW) == ERROR_FILE_NOT_FOUND)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"Data\" Folder.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"Data\" Folder.\n");
 			fflush(wEventLog);
 			break;
 		}
 		case ID_DATAFILES_OPENSONGDATA:
 		{
 			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"SFData.txt"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"SFData.txt\".\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"SFData.txt\".\n");
 			fflush(wEventLog);
 			break;
 		}
 		case ID_DATAFILES_OPENBEATMAPDATA:
 		{
 			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"BMData.txt"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"BMData.txt\".\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"BMData.txt\".\n");
 			fflush(wEventLog);
 			break;
 		}
 		case ID_DATAFILES_OPENEVENTLOG:
 		{
 			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
 			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events_OLD.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opening \"Events.log\".\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"Events.log\".\n");
 			fflush(wEventLog);
 			break;
 		}
 		case IDM_CLEARDATA:
 		{
-			int clearDataMB = MessageBox(hWnd,
-				L"Osu!Bot will clear/clean up all collected data.\nNOTE: this will not clear the current log file and config file!\n\nAre you sure you want to delete the data files?",
+			int clearDataMB = MessageBox(hwnd,
+				L"Osu!Bot will clear/clean up all collected data (logs).\nNOTE: this will clear ALL logs (The config file will not be removed!)\n\nAre you sure you want to delete the data files?",
 				L"Delete Osu!Bot data files?",
 				MB_ICONWARNING | MB_YESNO | MB_APPLMODAL);
 			if (clearDataMB == IDNO)
@@ -361,38 +361,38 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			DeleteFile(L"Data\\SFData.txt");
 			DeleteFile(L"Data\\BMData.txt");
-			DeleteFile(L"Data\\Logs\\Events_OLD.log"); //Needs review
+			DeleteFile(L"Data\\Logs");
 
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User cleared data Files.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User cleared data Files.\n");
 			fflush(wEventLog);
 
 			SendMessage(hwndButtonOpenSongFolder, WM_SETTEXT, 0, LPARAM(L"Select"));
 			SendMessage(hwndButtonOpenSongFile, WM_SETTEXT, 0, LPARAM(L"Select"));
 
-			DrawTextToWindow(hWnd, songsFolderText, rectSongsFolder);
-			DrawTextToWindow(hWnd, songFileText, rectSongFile);
+			DrawTextToWindow(hwnd, songsFolderText, rectSongsFolder);
+			DrawTextToWindow(hwnd, songFileText, rectSongFile);
 			break;
 		}
 		case IDM_SETTINGS:
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Opened Settings.\n");
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_SETTINGSBOX), hWnd, Settings);
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opened Settings.\n");
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_SETTINGSBOX), hwnd, Settings);
 			fflush(wEventLog);
 			break;
 
 		case IDM_ABOUT:
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User opened about box.\n");
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User opened about box.\n");
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, About);
 			fflush(wEventLog);
 			break;
 
 		case IDM_EXIT:
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  User Exited the program.\n");
-			DestroyWindow(hWnd);
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Exited the program.\n");
+			DestroyWindow(hwnd);
 			fflush(wEventLog);
 			break;
 
 		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
+			return DefWindowProc(hwnd, message, wParam, lParam);
 		} break;
 	}
 	case WM_PAINT:
@@ -404,9 +404,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 
 		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hWnd, &ps);
+		HDC hdc = BeginPaint(hwnd, &ps);
 
-		GetClientRect(hWnd, &rectOsuBotWindow);
+		GetClientRect(hwnd, &rectOsuBotWindow);
 		nHeight = rectOsuBotWindow.bottom > 290 ? rectOsuBotWindow.bottom : 290;
 		nWidth = rectOsuBotWindow.right > 585 ? rectOsuBotWindow.right : 585;
 
@@ -443,9 +443,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_FLAT,
 			(nWidth - 110), 10,
 			100, 40,
-			hWnd,
+			hwnd,
 			(HMENU)BTN_ButtonOpenSongFolder,
-			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
 			nullptr
 		);
 
@@ -455,9 +455,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_FLAT,
 			(nWidth - 110), 80,
 			100, 40,
-			hWnd,
+			hwnd,
 			(HMENU)BTN_ButtonOpenSongFile,
-			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
 			nullptr
 		);
 
@@ -469,9 +469,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX,
 			10, 60,
 			140, 15,
-			hWnd,
+			hwnd,
 			(HMENU)CB_CheckBoxAutoOpenSong,
-			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
 			nullptr
 		);
 
@@ -482,9 +482,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX,
 			10, 130,
 			140, 15,
-			hWnd,
+			hwnd,
 			(HMENU)CB_CheckBoxHardrockFlip,
-			(HINSTANCE)GetWindowLong(hWnd, GWLP_HINSTANCE),
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
 			nullptr
 		);
 
@@ -498,7 +498,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			WS_VISIBLE | WS_CHILD | PBS_SMOOTH,
 			10, (nHeight - 40),
 			(nWidth - 20), 30,
-			hWnd,
+			hwnd,
 			nullptr,
 			hInst,
 			nullptr
@@ -509,7 +509,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		SendMessage(hwndProgressBar, PBM_SETPOS, WPARAM(objectNumber), NULL);
 
 		// TODO END;
-		EndPaint(hWnd, &ps);
+		EndPaint(hwnd, &ps);
 		break;
 	}
 	case WM_DESTROY:
@@ -517,7 +517,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 
 	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProc(hwnd, message, wParam, lParam);
 	} return 0;
 }
 
@@ -628,28 +628,28 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
 				CloseHandle(osuProcessHandle);
 
-				/* EventLog */	fprintf(wEventLog, "[WARNING]  timeAddres NOT FOUND!\n");
+				/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddres NOT FOUND!\n");
 				fflush(wEventLog);
 
 				statusText = L"timeAddress NOT found!   Please use a correct timeAddress pointer.";
 				DrawTextToWindow(hWnd, statusText, rectStatus);
 			}
 
-			stringstream timeAddressString;
+			wstringstream timeAddressString;
 			timeAddressString << "0x" << hex << (UINT)timeAddress;
 
-			/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" UPDATED!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+			/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddres\" UPDATED!\n           timeAddres: " + timeAddressString.str() + L"\n").c_str());
 			fflush(wEventLog);
 
 
-			/* EventLog */	fprintf(wEventLog, "            Settings are changed!\n");
+			/* EventLog */	fwprintf(wEventLog, L"            Settings are changed!\n");
 			EndDialog(hDlg, LOWORD(wParam));
 			fflush(wEventLog);
 
 			return (INT_PTR)TRUE;
 		}
 		else if (LOWORD(wParam) == IDCANCEL) {
-			/* EventLog */	fprintf(wEventLog, "            Nothing was changed.\n");
+			/* EventLog */	fwprintf(wEventLog, L"            Nothing was changed.\n");
 			fflush(wEventLog);
 
 			EndDialog(hDlg, LOWORD(wParam));
