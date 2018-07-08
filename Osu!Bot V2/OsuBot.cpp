@@ -64,27 +64,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	CreateDirectory(LPCTSTR(L"Data\\Logs"), NULL);
 
 
-	FILE* rEventLog = fopen("Data\\Logs\\Events.log", "r");
+	FILE* rEventLog = _wfopen(L"Data\\Logs\\Events.log", L"r");
 	if (rEventLog != NULL) {
-		CHAR buff[MAX_LOADSTRING];
-		fgets(buff, MAX_LOADSTRING, rEventLog);
+		TCHAR buff[MAX_LOADSTRING];
+		fgetws(buff, MAX_LOADSTRING, rEventLog);
 		
-		string timestamp(buff);
+		wstring timestamp(buff);
 		timestamp.assign(timestamp.begin() + 22U, timestamp.end() - 1U);
 
 		for (unsigned int i = 0; i < timestamp.size() - 1; i++)
-			if (timestamp.at(i) == ':')
-				timestamp.at(i) = '.';
+			if (timestamp.at(i) == L':')
+				timestamp.at(i) = L'.';
 
-		string backupLog = ("Data\\Logs\\Events (" + timestamp + ").log");
+		wstring backupLog = (L"Data\\Logs\\Events (" + timestamp + L").log");
 		
-		FILE* bEventLog = fopen(&backupLog[0], "w");
+		FILE* bEventLog = _wfopen(&backupLog[0], L"w");
 
-		fputs(buff, bEventLog);
+		fputws(buff, bEventLog);
 		while (!feof(rEventLog))
-			if (fgets(buff, MAX_LOADSTRING, rEventLog) != NULL)
-				fputs(buff, bEventLog);
+			if (fgetws(buff, MAX_LOADSTRING, rEventLog) != NULL)
+				fputws(buff, bEventLog);
 		fflush(bEventLog);
+		fclose(bEventLog);
 	}
 
 	wEventLog = _wfopen(L"Data\\Logs\\Events.log", L"w");
@@ -560,12 +561,12 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_SETCURSEL, NULL, (LPARAM)!inputKeyBoard);
 
 
-		TCHAR str;
+		wstring str;
 
-		str = (TCHAR)inputMainKey;
-		SetDlgItemTextW(hDlg, IDC_INPUTKEYMAIN, &str);
-		str = (TCHAR)inputAltKey;
-		SetDlgItemTextW(hDlg, IDC_INPUTKEYALT, &str);
+		str = (wchar_t)inputMainKey;
+		SetDlgItemText(hDlg, IDC_INPUTKEYMAIN, LPCTSTR(str.c_str()));
+		str = (wchar_t)inputAltKey;
+		SetDlgItemText(hDlg, IDC_INPUTKEYALT, LPCTSTR(str.c_str()));
 
 
 		return (INT_PTR)TRUE;
@@ -581,10 +582,10 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			TCHAR key[MAXCHAR];
 
 			GetDlgItemText(hDlg, IDC_INPUTKEYMAIN, (LPTSTR)key, MAXCHAR);
-			inputMainKey = wstring(key)[0];
+			inputMainKey = key[0];
 
 			GetDlgItemText(hDlg, IDC_INPUTKEYALT, (LPTSTR)key, MAXCHAR);
-			inputAltKey = wstring(key)[0];
+			inputAltKey = key[0];
 
 			
 			TCHAR offset[MAXCHAR];

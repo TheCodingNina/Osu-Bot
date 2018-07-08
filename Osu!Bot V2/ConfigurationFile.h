@@ -90,12 +90,12 @@ bool CreateNewConfigFile() {
 			L"Offset4 : c8",
 			L"ThreadOffset : -32c",
 			L"",
-			L"[Input Methode]",
-			L"UseKeyboard : true",
-			L"",
 			L"[Input Keys] //Currently only works with non-special keys!",
 			L"MainKey : Z",
 			L"AltKey : X",
+			L"",
+			L"[Input Methode]",
+			L"UseKeyboard : true",
 			L""
 		};
 
@@ -104,7 +104,7 @@ bool CreateNewConfigFile() {
 	}
 	catch (const exception &e) {
 		wstringstream ss; ss << e.what();
-		
+
 		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't create a configuration file!\n            with error: " + ss.str()).c_str());
 		fflush(wEventLog);
 		return FALSE;
@@ -113,11 +113,16 @@ bool CreateNewConfigFile() {
 
 
 bool AddSettingString(wstring &settingString, const wstring configSetting, const LPVOID configValue, const configurationSettings configurationSetting) {
-	if (configurationSetting == L'i') {
+	switch (configurationSetting) {
+	case L'i':
+	{
 		int* settingValue = (int*)configValue;
 		settingString = configSetting + L" : " + to_wstring(*settingValue);
+
+		break;
 	}
-	else if (configurationSetting == L'h') {
+	case L'h':
+	{
 		wstringstream ss;
 		int* settingValue = (int*)configValue;
 		int hexValue = *settingValue;
@@ -131,29 +136,41 @@ bool AddSettingString(wstring &settingString, const wstring configSetting, const
 			ss << hex << hexValue;
 			settingString = configSetting + L" : " + wstring(ss.str());
 		}
+
+		break;
 	}
-	else if (configurationSetting == L's') {
+	case L's':
+	{
 		wstring* settingValue = (wstring*)configValue;
 		wstring wValue = *settingValue;
 		settingString = configSetting + L" : " + wValue;
+
+		break;
 	}
-	else if (configurationSetting == L'k') {
-		int* settingValue = (int*)configValue;
+	case L'k':
+	{
+		WORD* settingValue = (WORD*)configValue;
 		TCHAR keyValue = (TCHAR)*settingValue;
 		settingString = configSetting + L" : " + keyValue;
+
+		break;
 	}
-	else if (configurationSetting == L'b') {
+	case L'b':
+	{
 		bool* settingValue = (bool*)configValue;
 		bool boolValue = *settingValue;
 		wstring boolString = (boolValue ? L"true" : L"false");
 		settingString = configSetting + L" : " + boolString;
+
+		break;
 	}
-	else
+	default:
 		return FALSE;
+	}
 	return TRUE;
 }
 
-bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
+bool UpdateConfigFile(const vector<configurationSettings> settingsList) {
 	try {
 		wstring readLine;
 		vector<wstring> allConfigStrings;
@@ -247,7 +264,7 @@ bool UpdateConfigFile(const vector<configurationSettings> &settingsList) {
 }
 
 bool UpdateConfigFile(const configurationSettings &setting) {
-	return UpdateConfigFile(vector<configurationSettings>(setting));
+	return UpdateConfigFile(vector<configurationSettings> { setting });
 }
 
 bool ReadFromConfigFile(const configurationSettings &setting) {
@@ -260,7 +277,7 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 		FillMap(configValues, configString, setting);
 
 		wfstream configFile;
-		configFile.open("Data\\configFile.cfg", wfstream::in);
+		configFile.open(L"Data\\configFile.cfg", wfstream::in);
 
 		while (!configFile.eof() && readLine.find(configString) == wstring::npos) {
 			getline(configFile, readLine, configFile.widen(L'\n'));
@@ -278,7 +295,9 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 			UINT pos = readLine.find_first_of(L":") + 1U;
 			UINT valuePos = readLine.at(pos) == L' ' ? pos + 1U : pos;
 
-			if (setting == L'i') {
+			switch (setting) {
+			case L'i':
+			{
 				int intValue;
 				if (readLine.at(valuePos) == L'-') {
 					intValue = stoi(readLine.substr(valuePos + 1));
@@ -289,8 +308,11 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 
 				int* configValue = (int*)(configValues.at(configSetting));
 				*configValue = intValue;
+
+				break;
 			}
-			else if (setting == L'h') {
+			case L'h':
+			{
 				wstringstream ss;
 				int hexValue;
 				if (readLine.at(valuePos) == L'-') {
@@ -305,21 +327,30 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 
 				int* configValue = (int*)(configValues.at(configSetting));
 				*configValue = hexValue;
+
+				break;
 			}
-			else if (setting == L's') {
+			case L's':
+			{
 				wstring stringValue = readLine.substr(valuePos);
 
 				wstring* configValue = (wstring*)(configValues.at(configSetting));
 				*configValue = stringValue;
-			}
-			else if (setting == L'k') {
-				wchar_t charValue = readLine.substr(valuePos)[0];
-				int KeyValue = (int)charValue;
 
-				int* configValue = (int*)(configValues.at(configSetting));
-				*configValue = KeyValue;
+				break;
 			}
-			else if (setting == L'b') {
+			case L'k':
+			{
+				wchar_t charValue = readLine.substr(valuePos)[0];
+				WORD KeyValue = (WORD)charValue;
+
+				WORD* configValue = (WORD*)(configValues.at(configSetting));
+				*configValue = KeyValue;
+
+				break;
+			}
+			case L'b':
+			{
 				wstring stringValue = readLine.substr(valuePos);
 
 				bool boolValue;
@@ -332,9 +363,13 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 
 				bool* configValue = (bool*)(configValues.at(configSetting));
 				*configValue = boolValue;
+
+				break;
 			}
-			else
+			default:
+				configFile.close();
 				return FALSE;
+			}
 		}
 
 		configFile.close();
