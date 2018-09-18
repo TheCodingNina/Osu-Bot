@@ -620,7 +620,7 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			stringstream timeAddressString;
 			timeAddressString << "0x" << hex << (UINT)timeAddress;
 
-			/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" UPDATED!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+			/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" UPDATED!\n            timeAddres: " + timeAddressString.str() + "\n").c_str());
 			fflush(wEventLog);
 
 

@@ -261,7 +261,7 @@ bool OpenSongAuto(wstring title) {
 		case '>':
 			beatmapName.at(i) = '-';
 		case '*':
-			beatmapName.at(i) = '-';
+			beatmapName.at(i) = '_';
 		case ':':
 			beatmapName.at(i) = '_';
 		}
@@ -301,28 +301,31 @@ bool OpenSongAuto(wstring title) {
 
 	while (rSFData) {
 		getline(rSFData, readLine);
-		if (readLine.find(beatmapName) != string::npos) {
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
+		size_t findPos = readLine.find(beatmapName);
+		if (findPos != string::npos) {
+			if (readLine.substr(findPos) == beatmapName) {
+				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
 
-			fstream wBMData; wBMData.open("Data\\BMData.txt", fstream::out | fstream::app);
-			wBMData << "[BeatmapDifficulties]\n";
+				fstream wBMData; wBMData.open("Data\\BMData.txt", fstream::out | fstream::app);
+				wBMData << "[BeatmapDifficulties]\n";
 
-			string directory = string(songsPath.begin(), songsPath.end()) + "\\" + readLine;
+				string directory = string(songsPath.begin(), songsPath.end()) + "\\" + readLine;
 
-			for (auto beatmapFile : experimental::filesystem::directory_iterator(directory)) {
-				stringstream sstream; sstream << beatmapFile;
+				for (auto beatmapFile : experimental::filesystem::directory_iterator(directory)) {
+					stringstream sstream; sstream << beatmapFile;
 
-				string beatmapString = sstream.str();
-				wBMData << string((beatmapString.begin() + directory.size() + 1), beatmapString.end()) << endl;
+					string beatmapString = sstream.str();
+					wBMData << string((beatmapString.begin() + directory.size() + 1), beatmapString.end()) << endl;
+				}
+
+				beatmapSets.push_back(directory);
+
+				wBMData << "\n";
+
+				wBMData.close();
+
+				/* EventLog */	fprintf(wEventLog, "[EVENT]    Finished BMData writing.\n");
 			}
-
-			beatmapSets.push_back(directory);
-
-			wBMData << "\n";
-
-			wBMData.close();
-
-			/* EventLog */	fprintf(wEventLog, "[EVENT]    Finished BMData writing.\n");
 		}
 	}
 	rSFData.close();

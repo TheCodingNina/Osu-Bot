@@ -227,7 +227,7 @@ void FindGame() {
 	stringstream timeAddressString;
 	timeAddressString << "0x" << hex << (UINT)timeAddress;
 
-	/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" FOUND!  Starting Checker and Time threads!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+	/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" FOUND!  Starting Checker and Time threads!\n            timeAddres: " + timeAddressString.str() + "\n").c_str());
 	fflush(wEventLog);
 
 	statusText = L"Waiting for user...";
