@@ -4,29 +4,32 @@ A cursor dancing bot that can, fully autonomous, play the Rhythm game called Osu
 USE THIS WITH RESPONSABLITY!!
 I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/RESTRICTED ON OSU!
 
+## Usage Instructions
+0. Unzip anywhere you like.
+1. Execute (Osu!Bot V2.exe).
+2. Select osu! 'songs' folder (default location like: C:\Users\\[USERNAME]\AppData\local\osu!\songs).  
+   (Only needed on first start or after deletion of Osu!Bot Data Folder.)
+3. Check 'Auto Open Song'.
+4. Play any map.
+5. Play next map.
 
-# Usage Instructions
-0.	Unzip anywhere you like.
-1.	Execute (Osu!Bot V2.exe).
-2.	Select osu! 'songs' folder (default location like: C:\Users\%USERNAME%\AppData\local\osu!\songs).
-		(Only needed on first start or after deletion of Osu!Bot Data Folder.)
-3.	Check 'Auto Open Song'.
-4.	Play any map.
-5.	Play next map.
+### Mods Compatibility
+ * If Osu!Bot can't find the beatmap you can manually select it by pressing the select/change button  
+   to the right of the 'Auto Open song'.
 
+ * Osu!Bot is able to play with any mod!  
+   BUT if you want it to play with 'Hardrock' You need to manually enable the hardrock by checking 'Hardrock (flip)'.
 
-# Timer Pointer
-ThreadOffset : -32C
+## Timer Pointer
 
-Offset0 : DC
+| Name       	| Hex Value	|
+| ------------- | -------------	|
+| ThreadOffset	| -32C		|
+| Offset0	| E0      	|
+| Offset1	| E0      	|
+| Offset2	| 4CC		|
+| Offset3	| 2E4		|
+| Offset4	| 128		|
 
-Offset1 : 750
-
-Offset2 : A0
-
-Offset3 : 684
-
-Offset4 : C8
-
-
-// NOTE: These values are in hexadecimal.
+### To find this pointer yourself
+Search for the time with something like Cheat Engine, this can be done easily in edit mode on osu!, and make a pointer of that address. Then put the pointer as the TimerPointer for Osu!Bot. You can change this via the settings tab or manually in the configFile.
