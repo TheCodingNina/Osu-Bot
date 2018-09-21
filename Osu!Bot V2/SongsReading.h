@@ -297,8 +297,10 @@ bool OpenSongAuto(wstring title) {
 
 	while (rSFData) {
 		getline(rSFData, readLine);
-		if (readLine.find(beatmapName) != wstring::npos) {
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting BMData writing...\n");
+		size_t findPos = readLine.find(beatmapName);
+		if (findPos != string::npos) {
+			if (readLine.substr(findPos) == beatmapName) {
+				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
 
 			wfstream wBMData; wBMData.open(L"Data\\BMData.txt", wfstream::out | wfstream::app);
 			wBMData << L"[BeatmapDifficulties]\n";
@@ -312,11 +314,11 @@ bool OpenSongAuto(wstring title) {
 				wBMData << wstring((beatmapString.begin() + directory.size() + 1U), beatmapString.end()) << endl;
 			}
 
-			beatmapSets.push_back(directory);
+				beatmapSets.push_back(directory);
 
 			wBMData << L"\n";
 
-			wBMData.close();
+				wBMData.close();
 
 			/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData writing.\n");
 		}
