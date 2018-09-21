@@ -13,12 +13,14 @@ using namespace std;
 
 
 LPVOID GetTimeAddress() {
+	int pLevel = 5;
+	
 	DWORD osuProcessID = GetProcessID("osu!.exe");
 	osuProcessHandle = GetHandle(osuProcessID);
 
 	LPVOID threadAddress = reinterpret_cast<LPVOID>((GetThreadStack(osuProcessHandle, ThreadList(osuProcessID)))[0] + threadOffset);
 
-	return GetAddress(osuProcessHandle, threadAddress, 5, offsets);
+	return GetAddress(osuProcessHandle, threadAddress, pLevel);
 }
 
 
@@ -93,7 +95,7 @@ void AutoPlay(wstring nowPlaying) {
 			while (!songStarted && !firstStart) {
 				this_thread::sleep_for(chrono::microseconds(50));
 			}
-			nObject -= 2U;
+			nObject -= (UINT)2;
 		}
 		this_thread::sleep_for(chrono::microseconds(50));
 	}
@@ -103,7 +105,7 @@ void AutoPlay(wstring nowPlaying) {
 	statusText = L"Waiting for user...";
 	DrawTextToWindow(hWnd, statusText, rectStatus);
 
-	/* EventLog */	fprintf(wEventLog, "[EVENT]  AutoPlay thread finished.\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  AutoPlay thread finished.\n");
 	fflush(wEventLog);
 
 	songStarted = FALSE;
@@ -144,7 +146,7 @@ void GameActiveChecker() {
 					SongFileCheck(OpenSongAuto(title), autoSelect);
 				}
 
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting AutoPlay thread!\n");
+				/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting AutoPlay thread!\n");
 				fflush(wEventLog);
 
 				thread AutoThread(AutoPlay, title);
@@ -181,24 +183,24 @@ void GameActiveChecker() {
 }
 
 void FindGame() {
-	osuWindow = FindWindowA(NULL, "osu!");
+	osuWindow = FindWindow(NULL, L"osu!");
 	if (osuWindow == NULL) {
-		/* EventLog */	fprintf(wEventLog, "[WARNING]  The procces \"osu!\" was not found!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  The procces \"osu!\" was not found!\n");
 		fflush(wEventLog);
 
 		statusText = L"\"osu!\" NOT found!   Please start \"osu!\"...";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
 
 		while (osuWindow == NULL) {
-			osuWindow = FindWindowA(NULL, "osu!");
+			osuWindow = FindWindow(NULL, L"osu!");
 			Sleep(500);
 		}
 	}
 
-	/* EventLog */	fprintf(wEventLog, "[EVENT]  osu!.exe FOUND!\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  osu!.exe FOUND!\n");
 
 	if (threadOffset == 0x0) {
-		/* EventLog */	fprintf(wEventLog, "[WARNING]  Thread / Pointer Offsets not set!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  Thread / Pointer Offsets not set!\n");
 		fflush(wEventLog);
 
 		statusText = L"Thread / Pointer Offsets not set!  Change it under Settings!";
@@ -213,7 +215,7 @@ void FindGame() {
 		|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
 		CloseHandle(osuProcessHandle);
 
-		/* EventLog */	fprintf(wEventLog, "[WARNING]  timeAddres NOT FOUND!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddres NOT FOUND!\n");
 		fflush(wEventLog);
 
 		statusText = L"timeAddress NOT found!   Please start \"osu!\" BEFORE starting \"Osu!Bot\"!";
@@ -222,10 +224,10 @@ void FindGame() {
 		FindGame();
 	}
 
-	stringstream timeAddressString;
+	wstringstream timeAddressString;
 	timeAddressString << "0x" << hex << (UINT)timeAddress;
 
-	/* EventLog */	fprintf(wEventLog, ("[EVENT]  \"timeAddres\" FOUND!  Starting GameChecker and Time threads!\n           timeAddres: " + timeAddressString.str() + "\n").c_str());
+	/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddres\" FOUND!  Starting Checker and Time threads!\n           timeAddres: " + timeAddressString.str() + L"\n").c_str());
 	fflush(wEventLog);
 
 	statusText = L"Waiting for user...";

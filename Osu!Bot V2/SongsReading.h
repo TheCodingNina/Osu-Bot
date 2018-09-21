@@ -12,62 +12,62 @@ float MapDifficultyRange(float difficulty, float min, float mid, float max) {
 }
 
 void ParseSong(LPCTSTR songPath) {
-	fstream path; path.open(songPath, fstream::in);
+	wfstream path; path.open(songPath, wfstream::in);
 	bool general = false;
 	bool difficulty = false;
 	bool timing = false;
 	bool hits = false;
 	bool beatDivisor = false;
 	while (!path.eof()) {
-		string str;
-		getline(path, str);
-		if (str.find("[General]") != string::npos) {
+		wstring str;
+		getline(path, str, path.widen(L'\n'));
+		if (str.find(L"[General]") != wstring::npos) {
 			general = true;
 		}
 		else if (general) {
-			if (str.find("StackLeniency") != string::npos) {
-				stackLeniency = stof(str.substr(str.find(':') + 1));
+			if (str.find(L"StackLeniency") != wstring::npos) {
+				stackLeniency = stof(str.substr(str.find(L':') + 1U));
 			}
-			else if (str.find(':') == string::npos) {
+			else if (str.find(L':') == wstring::npos) {
 				general = false;
 			}
 		}
-		else if (str.find("[Editor]") != string::npos) {
+		else if (str.find(L"[Editor]") != wstring::npos) {
 			beatDivisor = true;
 		}
 		else if (beatDivisor) {
-			if (str.find("BeatDivisor") != string::npos) {
-				beatMapDivider = stof(str.substr(str.find(':') + 1));
+			if (str.find(L"BeatDivisor") != wstring::npos) {
+				beatMapDivider = stof(str.substr(str.find(L':') + 1U));
 			}
-			else if (str.find(':') == string::npos) {
+			else if (str.find(L':') == wstring::npos) {
 				beatDivisor = false;
 			}
 		}
-		else if (str.find("[Difficulty]") != string::npos) {
+		else if (str.find(L"[Difficulty]") != wstring::npos) {
 			difficulty = true;
 		}
 		else if (difficulty) {
-			if (str.find("OverallDifficulty:") != string::npos) {
-				overallDifficulty = stof(str.substr(str.find(':') + 1));
+			if (str.find(L"OverallDifficulty") != wstring::npos) {
+				overallDifficulty = stof(str.substr(str.find(L':') + 1U));
 			}
-			else if (str.find("CircleSize") != string::npos) {
-				circleSize = stof(str.substr(str.find(':') + 1));
+			else if (str.find(L"CircleSize") != wstring::npos) {
+				circleSize = stof(str.substr(str.find(L':') + 1U));
 			}
-			else if (str.find("SliderMultiplier") != string::npos) {
-				sliderMultiplier = stof(str.substr(str.find(':') + 1));
+			else if (str.find(L"SliderMultiplier") != wstring::npos) {
+				sliderMultiplier = stof(str.substr(str.find(L':') + 1U));
 			}
-			else if (str.find("SliderTickRate") != string::npos) {
-				sliderTickRate = stof(str.substr(str.find(':') + 1));
+			else if (str.find(L"SliderTickRate") != wstring::npos) {
+				sliderTickRate = stof(str.substr(str.find(L':') + 1U));
 			}
-			else if (str.find(':') == string::npos) {
+			else if (str.find(L':') == wstring::npos) {
 				difficulty = false;
 			}
 		}
-		else if (str.find("[TimingPoints]") != string::npos) {
+		else if (str.find(L"[TimingPoints]") != wstring::npos) {
 			timing = true;
 		}
 		else if (timing) {
-			if (str.find(',') == string::npos) {
+			if (str.find(L',') == wstring::npos) {
 				timing = false;
 			}
 			else {
@@ -75,11 +75,11 @@ void ParseSong(LPCTSTR songPath) {
 				timingPoints.push_back(TP);
 			}
 		}
-		else if (str.find("[HitObjects]") != string::npos) {
+		else if (str.find(L"[HitObjects]") != wstring::npos) {
 			hits = true;
 		}
 		else if (hits) {
-			if (str.find(',') == string::npos) {
+			if (str.find(L',') == wstring::npos) {
 				hits = false;
 			}
 			else {
@@ -231,121 +231,119 @@ void ParseSong(LPCTSTR songPath) {
 	}
 
 	if (path)
-		/* EventLog */	fprintf(wEventLog, "[EVENT]  Beatmap parsed without major errors.\n");
+		/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Beatmap parsed without major errors.\n");
 }
 
 
 bool OpenSongAuto(wstring title) {
-	char charsToRemove[] = { "?.\"" };
-	char charsToRemoveDiff[] = { "?<>" };
-	string displayTitle;
-	string beatmapName;
-	string difficultyName;
-	string beatmap;
-	vector<string> beatmapSets;
+	wchar_t charsToRemove[] = { L"?.\"" };
+	wchar_t charsToRemoveDiff[] = { L"?<>" };
+	wstring beatmapName;
+	wstring difficultyName;
+	vector<wstring> beatmapSets;
 	int beatmapSetCount = 0;
 
 
-	displayTitle.assign(title.begin(), title.end());
-
-	if (displayTitle.find("[") != string::npos) {
-		difficultyName = displayTitle.substr(displayTitle.find_last_of("["));
+	if (title.find(L"[") != wstring::npos) {
+		difficultyName = title.substr(title.find_last_of(L"["));
 	}
 
-	beatmapName = displayTitle.substr(displayTitle.find(displayTitle.at(8)), displayTitle.find_last_of("[") - 9);
+	beatmapName = title.substr(title.find(title.at(8)), title.find_last_of(L"[") - 9);
 
 	for (unsigned int i = 0; i < beatmapName.size() - 1; i++) {
 		switch (beatmapName.at(i)) {
-		case '<':
-			beatmapName.at(i) = '-';
-		case '>':
-			beatmapName.at(i) = '-';
-		case '*':
-			beatmapName.at(i) = '-';
-		case ':':
-			beatmapName.at(i) = '_';
+		case L'<':
+			beatmapName.at(i) = L'-';
+		case L'>':
+			beatmapName.at(i) = L'-';
+		case L'*':
+			beatmapName.at(i) = L'-';
+		case L':':
+			beatmapName.at(i) = L'_';
 		}
 	}
 
-	for (unsigned int i = 0; i < strlen(charsToRemove); i++) {
+	for (unsigned int i = 0; i < wcslen(charsToRemove); i++) {
 		beatmapName.erase(remove(beatmapName.begin(), beatmapName.end(), charsToRemove[i]), beatmapName.end());
 	}
 
-	for (unsigned int i = 0; i < difficultyName.size() - 1; i++) {
+	for (unsigned int i = 0; i < difficultyName.size() - 1U; i++) {
 		switch (difficultyName.at(i)) {
-		case '*':
-			difficultyName.at(i) = '_';
-		case ':':
-			difficultyName.at(i) = '_';
+		case L'*':
+			difficultyName.at(i) = L'_';
+		case L':':
+			difficultyName.at(i) = L'_';
 		}
 	}
 
-	for (unsigned int i = 0; i < strlen(charsToRemoveDiff); i++) {
+	for (unsigned int i = 0; i < wcslen(charsToRemoveDiff); i++) {
 		difficultyName.erase(remove(difficultyName.begin(), difficultyName.end(), charsToRemoveDiff[i]), difficultyName.end());
 	}
 
-	difficultyName += ".osu";
+	difficultyName += L".osu";
 
 
 	DeleteFile(L"Data\\BMData.txt");
-	/* EventLog */	fprintf(wEventLog, "[EVENT]  Cleared BMData from previous writing.\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Cleared BMData from previous writing.\n");
 
-	/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting SFData reading...\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting SFData reading...\n");
 
-	fstream rSFData; rSFData.open("Data\\SFData.txt", fstream::in);
+	wfstream rSFData; rSFData.open(L"Data\\SFData.txt", wfstream::in);
 
-	string readLine;
-	while (readLine != "[Songs Folders]") {
+	wstring readLine;
+	while (readLine != L"[Songs Folders]") {
 		getline(rSFData, readLine);
 	}
 
 	while (rSFData) {
 		getline(rSFData, readLine);
-		if (readLine.find(beatmapName) != string::npos) {
-			/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
+		size_t findPos = readLine.find(beatmapName);
+		if (findPos != string::npos) {
+			if (readLine.substr(findPos) == beatmapName) {
+				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
 
-			fstream wBMData; wBMData.open("Data\\BMData.txt", fstream::out | fstream::app);
-			wBMData << "[BeatmapDifficulties]\n";
+				wfstream wBMData; wBMData.open(L"Data\\BMData.txt", wfstream::out | wfstream::app);
+				wBMData << L"[BeatmapDifficulties]\n";
 
-			string directory = string(songsPath.begin(), songsPath.end()) + "\\" + readLine;
+				wstring directory = wstring(songsPath.begin(), songsPath.end()) + L"\\" + readLine;
 
-			for (auto beatmapFile : experimental::filesystem::directory_iterator(directory)) {
-				stringstream sstream; sstream << beatmapFile;
+				for (auto beatmapFile : experimental::filesystem::directory_iterator(directory)) {
+					wstringstream sstream; sstream << beatmapFile;
 
-				string beatmapString = sstream.str();
-				wBMData << string((beatmapString.begin() + directory.size() + 1), beatmapString.end()) << endl;
+					wstring beatmapString = sstream.str();
+					wBMData << wstring((beatmapString.begin() + directory.size() + 1U), beatmapString.end()) << endl;
+				}
+
+				beatmapSets.push_back(directory);
+
+				wBMData << L"\n";
+
+				wBMData.close();
+
+				/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData writing.\n");
 			}
-
-			beatmapSets.push_back(directory);
-
-			wBMData << "\n";
-
-			wBMData.close();
-
-			/* EventLog */	fprintf(wEventLog, "[EVENT]    Finished BMData writing.\n");
 		}
 	}
 	rSFData.close();
 	readLine.clear();
 
-	/* EventLog */	fprintf(wEventLog, "[EVENT]    Finished SFData reading.\n");
-	/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData reading...\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished SFData reading.\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting BMData reading...\n");
 
-	fstream rBMData; rBMData.open("Data\\BMData.txt", fstream::in);
+	wfstream rBMData; rBMData.open("Data\\BMData.txt", wfstream::in);
 
 	getline(rBMData, readLine);
 
 	while (rBMData) {
 		getline(rBMData, readLine);
-		if (readLine == "[BeatmapDifficulties]") {
+		if (readLine == L"[BeatmapDifficulties]") {
 			getline(rBMData, readLine);
 			beatmapSetCount++;
 		}
 
-		if (readLine.find(difficultyName) != string::npos) {
-			string beatmapConvert = beatmapSets.at(beatmapSetCount) + "\\" + readLine;
-			beatmapPath = wstring(beatmapConvert.begin(), beatmapConvert.end());
-			displayBeatmapPath = wstring(readLine.begin(), readLine.end());
+		if (readLine.find(difficultyName) != wstring::npos) {
+			beatmapPath = beatmapSets.at(beatmapSetCount) + L"\\" + readLine;
+			displayBeatmapPath = readLine;
 
 			rBMData.close();
 
@@ -354,7 +352,7 @@ bool OpenSongAuto(wstring title) {
 	}
 	rBMData.close();
 
-	/* EventLog */	fprintf(wEventLog, "[EVENT]    Finished BMData reading.\n");
+	/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData reading.\n");
 
 	return FALSE;
 }
@@ -366,7 +364,7 @@ bool OpenSongManual() {
 		COMDLG_FILTERSPEC rgFilterSpec[] = { { L"osu! Beatmap", L"*.osu" } };
 		pfd2->GetOptions(&dwOptions2);
 		pfd2->SetOptions(dwOptions2 | FOS_STRICTFILETYPES);
-		pfd2->SetFileTypes(UINT(1), rgFilterSpec);
+		pfd2->SetFileTypes(1U, rgFilterSpec);
 		pfd2->Show(NULL);
 		try {
 			if (SUCCEEDED(pfd2->GetResult(&psi2))) {
@@ -383,7 +381,7 @@ bool OpenSongManual() {
 	}
 
 	if (!beatmapPath.empty()) {
-		displayBeatmapPath = beatmapPath.substr(beatmapPath.find_last_of('\\') + 1);
+		displayBeatmapPath = beatmapPath.substr(beatmapPath.find_last_of('\\') + 1U);
 		return TRUE;
 	}
 	else return FALSE;
@@ -401,14 +399,14 @@ bool OpenSongFolder() {
 			if (psi->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &pathName) == S_OK) {
 				songsPath = pathName;
 
-				fstream wSFData; wSFData.open("Data\\SFData.txt", fstream::out);
-				wSFData << "[Songs Folders]\n";
+				wfstream wSFData; wSFData.open(L"Data\\SFData.txt", wfstream::out);
+				wSFData << L"[Songs Folders]\n";
 
 				for (auto beatmapFolder : experimental::filesystem::directory_iterator(pathName)) {
-					stringstream sstream; sstream << beatmapFolder;
+					wstringstream sstream; sstream << beatmapFolder;
 
-					string beatmapString = sstream.str();
-					wSFData << string((beatmapString.begin() + songsPath.size() + 1), beatmapString.end()) << endl;
+					wstring beatmapString = sstream.str();
+					wSFData << wstring((beatmapString.begin() + songsPath.size() + 1U), beatmapString.end()) << endl;
 				}
 				wSFData.close();
 			}
@@ -425,10 +423,10 @@ bool OpenSongFolder() {
 		CoUninitialize();
 	}
 
-	if (fopen("Data\\SFData.txt", "r"))
+	if (_wfopen(L"Data\\SFData.txt", L"r"))
 		return TRUE;
 	else if (songsPath.empty()) {
-		if (ReadFromConfigFile({ songsFolderPath })) {
+		if (ReadFromConfigFile(songsFolderPath)) {
 			if (songsPath.compare(L"") != 0)
 				return TRUE;
 			else
@@ -440,14 +438,14 @@ bool OpenSongFolder() {
 }
 
 
-void SongFileCheck(bool songFileCheck, string selectedBy) {
+void SongFileCheck(bool songFileCheck, wstring selectedBy) {
 	if (songFileCheck) {
 		DrawTextToWindow(hWnd, displayBeatmapPath.c_str(), rectSongFile);
 
 		statusText = L"Beatmap Successfully Selected!";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
 
-		/* EventLog */	fprintf(wEventLog, ("[EVENT]  Beatmap successfully selected by " + selectedBy).c_str());
+		/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  Beatmap successfully selected by " + selectedBy).c_str());
 
 		hitObjects.clear();
 		timingPoints.clear();
@@ -462,6 +460,6 @@ void SongFileCheck(bool songFileCheck, string selectedBy) {
 		statusText = L"No Beatmap Selected!";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
 
-		/* EventLog */	fprintf(wEventLog, ("[EVENT]  No Beatmap was selected by " + selectedBy).c_str());
+		/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  No Beatmap was selected by " + selectedBy).c_str());
 	}
 }
