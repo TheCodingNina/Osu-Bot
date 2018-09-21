@@ -31,27 +31,27 @@ vector<vec2f> FindControlPoints(vec2f vec1, vec2f vec2, vec2f vec3, float Amplif
 }
 
 
-void MoveToStandard(HitObject *hitObject) {
+void MoveToStandard(HitObject *objects) {
 	GetCursorPos(&cursorPoint);
 
 	pB = vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y));
-	pE = vec2f((hitObject->getStartPos().x - stackOffset * hitObject->getStack()) * multiplierX + osuWindowX,
-		(hitObject->getStartPos().y - stackOffset * hitObject->getStack())  * multiplierY + osuWindowY);
+	pE = vec2f((objects->getStartPos().x - stackOffset * objects->getStack()) * multiplierX + osuWindowX,
+		(objects->getStartPos().y - stackOffset * objects->getStack())  * multiplierY + osuWindowY);
 
-	float dt = static_cast<float>(hitObject->getStartTime() - songTime);
+	float dt = static_cast<float>(objects->getStartTime() - songTime);
 
-	while (songTime < hitObject->getStartTime() && songStarted) {
-		float t = (dt - static_cast<float>(hitObject->getStartTime() - songTime)) / dt;
+	while (songTime < objects->getStartTime() && songStarted) {
+		float t = (dt - static_cast<float>(objects->getStartTime() - songTime)) / dt;
 		pCursor = pB + t * (pE - pB);
 
 		SetCursorPos(static_cast<int>(pCursor.x), static_cast<int>(pCursor.y));
 		this_thread::sleep_for(chrono::microseconds(100));
 	}
 
-	if (hitObject->getHitType() == HIT_CIRCLE) {
-		SendKeyPress(hitObject);
+	if (objects->getHitType() == HIT_CIRCLE) {
+		SendKeyPress(objects);
 		this_thread::sleep_for(chrono::milliseconds(12));
-		SendKeyRelease(hitObject);
+		SendKeyRelease(objects);
 	}
 }
 
@@ -60,8 +60,8 @@ void MoveToFlowing(vector<HitObject>* objects, const int nObject) {
 
 	vec2f p0 = vec2f((pE - pBack) + pE);
 
-	pP = nObject == 0 ? vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y)) : vec2f((hitObjects->at(nObject - 1).getEndPos().x - stackOffset * hitObjects->at(nObject - 1).getStack()) * multiplierX + osuWindowX,
-		(hitObjects->at(nObject - 1).getEndPos().y - stackOffset * hitObjects->at(nObject - 1).getStack()) * multiplierY + osuWindowY);
+	pP = nObject == 0 ? vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y)) : vec2f((objects->at(nObject - 1).getEndPos().x - stackOffset * objects->at(nObject - 1).getStack()) * multiplierX + osuWindowX,
+		(objects->at(nObject - 1).getEndPos().y - stackOffset * objects->at(nObject - 1).getStack()) * multiplierY + osuWindowY);
 	pB = vec2f(static_cast<float>(cursorPoint.x), static_cast<float>(cursorPoint.y));
 	pE = vec2f((objects->at(nObject).getStartPos().x - stackOffset * objects->at(nObject).getStack()) * multiplierX + osuWindowX,
 		(objects->at(nObject).getStartPos().y - stackOffset * objects->at(nObject).getStack()) * multiplierY + osuWindowY);
@@ -83,8 +83,8 @@ void MoveToFlowing(vector<HitObject>* objects, const int nObject) {
 		p0 = vec2f((pE - pBack).dev((pN - pE).length() * ((1.f / circleSize) * 400.f) + 1.f) + pE);
 	}*/
 	float delta = 0.f;
-	if (nObject + 1 < static_cast<signed int>(hitObjects->size()))
-		delta = static_cast<float>(hitObjects->at(nObject + 1).getStartTime() - hitObjects->at(nObject).getStartTime());
+	if (nObject + 1 < static_cast<signed int>(objects->size()))
+		delta = static_cast<float>(objects->at(nObject + 1).getStartTime() - objects->at(nObject).getStartTime());
 	if ((pE - pB).length() < (1.f / circleSize) * 300.f && delta <= 400.f) {
 		p0 = vec2f((pE - pBack).dev((pE - pBack).length() * (1.f / circleSize) * 400.f + 1.f) + pE);
 	}
@@ -115,22 +115,22 @@ void MoveToFlowing(vector<HitObject>* objects, const int nObject) {
 	pBack = pts.at(pts.size() - 2);
 }
 
-void SliderStandard(HitObject *hitObject) {
-	SendKeyPress(hitObject);
+void SliderStandard(HitObject *objects) {
+	SendKeyPress(objects);
 
-	while (songTime <= hitObject->getEndTime() && songStarted) {
-		auto t = static_cast<float>(songTime - hitObject->getStartTime()) / hitObject->getSliderTime();
+	while (songTime <= objects->getEndTime() && songStarted) {
+		auto t = static_cast<float>(songTime - objects->getStartTime()) / objects->getSliderTime();
 
-		vec2f vec = hitObject->getPointByT(t);
-		pCursor = vec2f((((vec.x - hitObject->getStack() * stackOffset) * multiplierX) + osuWindowX),
-			((vec.y - hitObject->getStack() * stackOffset) * multiplierY) + osuWindowY);
+		vec2f vec = objects->getPointByT(t);
+		pCursor = vec2f((((vec.x - objects->getStack() * stackOffset) * multiplierX) + osuWindowX),
+			((vec.y - objects->getStack() * stackOffset) * multiplierY) + osuWindowY);
 
 		SetCursorPos(static_cast<int>(pCursor.x), static_cast<int>(pCursor.y));
 
 		this_thread::sleep_for(chrono::microseconds(100));
 	}
 
-	SendKeyRelease(hitObject);
+	SendKeyRelease(objects);
 }
 
 void SliderFlowing(vector<HitObject> *objects, const int nObject) {
@@ -257,10 +257,10 @@ void SliderFlowing(vector<HitObject> *objects, const int nObject) {
 	while (songTime < objects->at(nObject).getEndTime() && songStarted) {
 		float t = static_cast<float>(songTime - objects->at(nObject).getStartTime()) / static_cast<float>(objects->at(nObject).getSliderTime());
 
-		float T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
-		if (T > 1.f && static_cast<float>(nPoly + 1) < hitObjects->at(nObject).getSliderRepeatCount() * hitObjects->at(nObject).getSliderTickCount()) {
+		float T = t * ceilf(objects->at(nObject).getSliderTickCount()) - nPoly;
+		if (T > 1.f && static_cast<float>(nPoly + 1) < objects->at(nObject).getSliderRepeatCount() * objects->at(nObject).getSliderTickCount()) {
 			++nPoly;
-			T = t * ceilf(hitObjects->at(nObject).getSliderTickCount()) - nPoly;
+			T = t * ceilf(objects->at(nObject).getSliderTickCount()) - nPoly;
 			/* EventLog */  //fprintf(wEventLog, (to_string(nObject).append(" : ").append(to_string(nPoly)).append(",").append(to_string(t)).append("\n")).c_str()); fflush(wEventLog);
 		}
 
@@ -280,16 +280,16 @@ void SliderFlowing(vector<HitObject> *objects, const int nObject) {
 	pP = pts.at(pts.size() - 1 - cpCount);
 }
 
-void SpinnerStandard(HitObject *hitObject) {
-	vec2f center(hitObject->getStartPos().x * multiplierX + osuWindowX,
-		(hitObject->getStartPos().y + 6.f) * multiplierY + osuWindowY);
+void SpinnerStandard(HitObject *objects) {
+	vec2f center(objects->getStartPos().x * multiplierX + osuWindowX,
+		(objects->getStartPos().y + 6.f) * multiplierY + osuWindowY);
 	float angle = TWO_PI;
 	float radius = (1.f / circleSize) * 450.f;
 
-	SendKeyPress(hitObject);
+	SendKeyPress(objects);
 
-	while (songTime < hitObject->getEndTime() && songStarted) {
-		float t = static_cast<float>(songTime - hitObject->getStartTime()) / static_cast<float>(hitObject->getEndTime() - hitObject->getStartTime());
+	while (songTime < objects->getEndTime() && songStarted) {
+		float t = static_cast<float>(songTime - objects->getStartTime()) / static_cast<float>(objects->getEndTime() - objects->getStartTime());
 		t *= 3.f; if (t >= 1.f) t = 1.f;
 		float radiusT = radius * t;
 
@@ -302,5 +302,5 @@ void SpinnerStandard(HitObject *hitObject) {
 		this_thread::sleep_for(chrono::microseconds(100));
 	}
 
-	SendKeyRelease(hitObject);
+	SendKeyRelease(objects);
 }

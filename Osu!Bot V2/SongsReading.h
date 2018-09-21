@@ -302,25 +302,26 @@ bool OpenSongAuto(wstring title) {
 			if (readLine.substr(findPos) == beatmapName) {
 				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
 
-			wfstream wBMData; wBMData.open(L"Data\\BMData.txt", wfstream::out | wfstream::app);
-			wBMData << L"[BeatmapDifficulties]\n";
+				wfstream wBMData; wBMData.open(L"Data\\BMData.txt", wfstream::out | wfstream::app);
+				wBMData << L"[BeatmapDifficulties]\n";
 
-			wstring directory = wstring(songsPath.begin(), songsPath.end()) + L"\\" + readLine;
+				wstring directory = wstring(songsPath.begin(), songsPath.end()) + L"\\" + readLine;
 
-			for (auto beatmapFile : experimental::filesystem::directory_iterator(directory)) {
-				wstringstream sstream; sstream << beatmapFile;
+				for (auto beatmapFile : experimental::filesystem::directory_iterator(directory)) {
+					wstringstream sstream; sstream << beatmapFile;
 
-				wstring beatmapString = sstream.str();
-				wBMData << wstring((beatmapString.begin() + directory.size() + 1U), beatmapString.end()) << endl;
-			}
+					wstring beatmapString = sstream.str();
+					wBMData << wstring((beatmapString.begin() + directory.size() + 1U), beatmapString.end()) << endl;
+				}
 
 				beatmapSets.push_back(directory);
 
-			wBMData << L"\n";
+				wBMData << L"\n";
 
 				wBMData.close();
 
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData writing.\n");
+				/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData writing.\n");
+			}
 		}
 	}
 	rSFData.close();
