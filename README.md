@@ -25,11 +25,11 @@ I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/
 | Name       	| Hex Value	|
 | ------------- | -------------	|
 | ThreadOffset	| -32C		|
-| Offset0	| E0      	|
-| Offset1	| E0      	|
-| Offset2	| 4CC		|
-| Offset3	| 2E4		|
-| Offset4	| 128		|
+| Offset0	| 1C      	|
+| Offset1	| 4C4      	|
+| Offset2	| D0		|
+| Offset3	| 16C		|
+| Offset4	| 150		|
 
 ### To find this pointer yourself
 Search for the time with something like Cheat Engine, this can be done easily in edit mode on osu!, and make a pointer of that address. Then put the pointer as the TimerPointer for Osu!Bot. You can change this via the settings tab or manually in the configFile.
