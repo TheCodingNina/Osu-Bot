@@ -4,6 +4,9 @@ A cursor dancing bot that can, fully autonomous, play the Rhythm game called Osu
 USE THIS WITH RESPONSABLITY!!
 I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/RESTRICTED ON OSU!
 
+## Video Showcase
+https://youtu.be/kP2mhnL4_CI?list=PLkSZ7HI4dIRgKJmiZ_L2XXK7PqpaEbNSl
+
 ## Usage Instructions
 0. Unzip anywhere you like.
 1. Execute (Osu!Bot V2.exe).
