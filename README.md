@@ -5,7 +5,7 @@ USE THIS WITH RESPONSABLITY!!
 I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/RESTRICTED ON OSU!
 
 ## Video Showcase
-https://youtu.be/kP2mhnL4_CI?list=PLkSZ7HI4dIRgKJmiZ_L2XXK7PqpaEbNSl
+https://www.youtube.com/watch?v=kP2mhnL4_CI
 
 ## Usage Instructions
 0. Unzip anywhere you like.
