@@ -16,7 +16,10 @@ https://www.youtube.com/watch?v=kP2mhnL4_CI
 4. Play any map.
 5. Play next map.
 
-### Mods Compatibility
+### Compatibility
+ * If the cursor seems to freeze in place after starting any beatmap, it mostlikely is a outdated 'TimerPointer'.
+   You can find a working one below here. If that one doesn't seem to work either, you can try to find it yourself with the instructions below that. Or just give me a ping/make an issue with the tag TimerPointer. And I'll update it as soon as possible.
+
  * If Osu!Bot can't find the beatmap you can manually select it by pressing the select/change button  
    to the right of the 'Auto Open song'.
 
@@ -28,11 +31,11 @@ https://www.youtube.com/watch?v=kP2mhnL4_CI
 | Name       	| Hex Value	|
 | ------------- | -------------	|
 | ThreadOffset	| -32C		|
-| Offset0	| 1C      	|
-| Offset1	| 4C4      	|
-| Offset2	| D0		|
-| Offset3	| 16C		|
-| Offset4	| 150		|
+| Offset0	| 48C      	|
+| Offset1	| 27C      	|
+| Offset2	| F8		|
+| Offset3	| 7B0		|
+| Offset4	| 70		|
 
 ### To find this pointer yourself
 Search for the time with something like Cheat Engine, this can be done easily in edit mode on osu!, and make a pointer of that address. Then put the pointer as the TimerPointer for Osu!Bot. You can change this via the settings tab or manually in the configFile.
