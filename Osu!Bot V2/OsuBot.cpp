@@ -8,6 +8,10 @@
 #define BTN_ButtonOpenSongFile 3002
 #define CB_CheckBoxAutoOpenSong 3003
 #define CB_CheckBoxHardrockFlip 3004
+#define TB_TrackBarDanceAmplifier 3005
+#define CB_ComboBoxDanceModeMoveTo 3006
+#define CB_ComboBoxDanceModeSlider 3007
+#define CB_ComboBoxDanceModeSpinner 3008
 
 #include "stdafx.h"
 
@@ -30,6 +34,10 @@ HWND hwndButtonOpenSongFolder = NULL;
 HWND hwndButtonOpenSongFile = NULL;
 HWND hwndCheckBoxAutoOpenSong = NULL;
 HWND hwndCheckBoxHardrockFlip = NULL;
+HWND hwndTrackBarDanceAmplifier = NULL;
+HWND hwndComboBoxDanceModeMoveTo = NULL;
+HWND hwndComboBoxDanceModeSlider = NULL;
+HWND hwndComboBoxDanceModeSpinner = NULL;
 wstring statusText = L"Start up...";
 wstring songsPath;
 bool songFileCheck;
@@ -42,6 +50,10 @@ RECT rectOsuBotWindow;
 RECT rectSongsFolder = { 10, 10, nWidth - 140, 50 };
 RECT rectSongFile = { 10, 80, nWidth - 140, 120 };
 RECT rectStatus = { 15, nHeight - 65, nWidth - 30, rectStatus.top + 18 };
+RECT rectDanceAmplifier = { 15, 150, 200, 170 };
+RECT rectDanceModeMoveTo = { 210, 150, 320, 175 };
+RECT rectDanceModeSlider = { 330, 150, 440, 175 };
+RECT rectDanceModeSpinner = { 450, 150, 560, 175 };
 // User Global Variables END;
 
 // Forward declarations of functions included in this code module:
@@ -68,7 +80,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	if (rEventLog != NULL) {
 		TCHAR buff[MAX_LOADSTRING];
 		fgetws(buff, MAX_LOADSTRING, rEventLog);
-		
+
 		wstring timestamp(buff);
 		timestamp.assign(timestamp.begin() + 22U, timestamp.end() - 1U);
 
@@ -77,7 +89,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 				timestamp.at(i) = L'.';
 
 		wstring backupLog = (L"Data\\Logs\\Events (" + timestamp + L").log");
-		
+
 		FILE* bEventLog = _wfopen(&backupLog[0], L"w");
 
 		fputws(buff, bEventLog);
@@ -90,7 +102,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	wEventLog = _wfopen(L"Data\\Logs\\Events.log", L"w");
 	if (wEventLog == NULL) { DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hWnd, ErrorBox); }
-	
+
 	time_t timeStamp = time(nullptr);
 	wstring timeString = _wasctime(localtime(&timeStamp));
 	timeString.erase(timeString.end() - 1, timeString.end());
@@ -108,7 +120,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	else {
 		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  ConfigFile not found!\n");
 
-		int configMB = MessageBoxW(hWnd,
+		int configMB = MessageBox(hWnd,
 			L"No config file was found!\nDo you want to generate a new config file?\n\nIf this doesn't work try manualy creating an empty file named \"configFile.cfg\" under the \"Data\" folder.",
 			L"Config file not found!",
 			MB_ICONWARNING | MB_YESNO | MB_APPLMODAL);
@@ -171,7 +183,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 	wcex.hInstance = hInstance;
 	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_OSUBOTV2));
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	wcex.lpszMenuName = MAKEINTRESOURCE(IDC_OSUBOTV2);
 	wcex.lpszClassName = szWindowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -233,6 +245,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		lpMMI->ptMinTrackSize.x = 600;
 		lpMMI->ptMinTrackSize.y = 350;
 		break;
+	}
+	case WM_CTLCOLORSTATIC:
+	{
+		SetBkColor((HDC)wParam, RGB(255, 255, 255));
+		return (LRESULT)GetStockObject(WHITE_BRUSH);
+	}
+	case WM_HSCROLL:
+	{
+		switch (LOWORD(wParam)) {
+		case TB_ENDTRACK:
+			DWORD dwPos = SendMessage(hwndTrackBarDanceAmplifier, TBM_GETPOS, NULL, NULL);
+
+			trackBarPos = dwPos;
+			Amplifier = static_cast<float>(dwPos) / 80.f;
+
+			UpdateConfigFile(danceSettings);
+		}
 	}
 	case WM_COMMAND:
 	{
@@ -312,6 +341,72 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
 			break;
 		}
+		case CB_ComboBoxDanceModeMoveTo:
+		{
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				int index = SendMessage(hwndComboBoxDanceModeMoveTo, CB_GETCURSEL, NULL, NULL);
+				switch (index) {
+				case MODE_NONE:
+					modeMoveTo = MODE_NONE;
+					break;
+				case MODE_STANDARD:
+					modeMoveTo = MODE_STANDARD;
+					break;
+				case MODE_FLOWING:
+					modeMoveTo = MODE_FLOWING;
+					break;
+				case MODE_PREDICTING:
+					modeMoveTo = MODE_PREDICTING;
+					break;
+				}
+			}
+			UpdateConfigFile(danceSettings);
+			break;
+		}
+		case CB_ComboBoxDanceModeSlider:
+		{
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				int index = SendMessage(hwndComboBoxDanceModeSlider, CB_GETCURSEL, NULL, NULL);
+				switch (index) {
+				case MODE_NONE:
+					modeSlider = MODE_NONE;
+					break;
+				case MODE_STANDARD:
+					modeSlider = MODE_STANDARD;
+					break;
+				case MODE_FLOWING:
+					modeSlider = MODE_FLOWING;
+					break;
+				case MODE_PREDICTING:
+					modeSlider = MODE_PREDICTING;
+					break;
+				}
+			}
+			UpdateConfigFile(danceSettings); 
+			break;
+		}
+		case CB_ComboBoxDanceModeSpinner:
+		{
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				int index = SendMessage(hwndComboBoxDanceModeSpinner, CB_GETCURSEL, NULL, NULL);
+				switch (index) {
+				case MODE_NONE:
+					modeSpinner = MODE_NONE;
+					break;
+				case MODE_STANDARD:
+					modeSpinner = MODE_STANDARD;
+					break;
+				case MODE_FLOWING:
+					modeSpinner = MODE_FLOWING;
+					break;
+				case MODE_PREDICTING:
+					modeSpinner = MODE_PREDICTING;
+					break;
+				}
+			}
+			UpdateConfigFile(danceSettings);
+			break;
+		}
 		case ID_DATAFILES_OPENDATAFOLDER:
 		{
 			if ((LONG)ShellExecute(NULL, LPCTSTR(L"explore"), LPCTSTR(L"Data"), NULL, NULL, SW_SHOW) == ERROR_FILE_NOT_FOUND)
@@ -341,10 +436,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case ID_DATAFILES_OPENEVENTLOG:
 		{
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
-
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events_OLD.log"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
+			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events.log"), NULL, LPCTSTR(L"Data\\Logs"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
 			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"Events.log\".\n");
@@ -398,9 +490,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	}
 	case WM_PAINT:
 	{
+		// Dance Settings Strings
+		LPCTSTR& modeNone = (LPCTSTR&)L"None";
+		LPCTSTR& modeStandard = (LPCTSTR&)L"Standard";
+		LPCTSTR& modeFlowing = (LPCTSTR&)L"Flowing";
+		LPCTSTR& modePredicting = (LPCTSTR&)L"Predicting";
+		
 		// Clean-up before re-draw hwnds
 		DestroyWindow(hwndButtonOpenSongFile);
 		DestroyWindow(hwndButtonOpenSongFolder);
+		DestroyWindow(hwndTrackBarDanceAmplifier);
 		DestroyWindow(hwndProgressBar);
 
 
@@ -437,11 +536,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			rectSongFile
 		);
 
+		DrawTextToWindow(
+			hdc,
+			L"Dance Amplifier",
+			rectDanceAmplifier
+		);
+
+		DrawTextToWindow(
+			hdc,
+			L"Mode MoveTo",
+			rectDanceModeMoveTo
+		);
+
+		DrawTextToWindow(
+			hdc,
+			L"Mode Slider",
+			rectDanceModeSlider
+		);
+
+		DrawTextToWindow(
+			hdc,
+			L"Mode Spinner",
+			rectDanceModeSpinner
+		);
+
 		// Buttons
 		hwndButtonOpenSongFolder = CreateWindow(
 			WC_BUTTON,
 			pathSet ? L"Change" : L"Select",
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_FLAT,
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 			(nWidth - 110), 10,
 			100, 40,
 			hwnd,
@@ -453,7 +576,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		hwndButtonOpenSongFile = CreateWindow(
 			WC_BUTTON,
 			songFileCheck ? L"Change" : L"Select",
-			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_FLAT,
+			WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
 			(nWidth - 110), 80,
 			100, 40,
 			hwnd,
@@ -476,6 +599,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			nullptr
 		);
 
+		SendMessage(hwndCheckBoxAutoOpenSong, BM_SETCHECK, WPARAM(autoOpenSong), NULL);
+
 		hwndCheckBoxHardrockFlip = CreateWindowEx(
 			NULL,
 			WC_BUTTON,
@@ -489,7 +614,82 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			nullptr
 		);
 
-		SendMessage(hwndCheckBoxAutoOpenSong, BM_SETCHECK, WPARAM(autoOpenSong), NULL);
+		SendMessage(hwndCheckBoxHardrockFlip, BM_SETCHECK, WPARAM(hardrockFlip), NULL);
+
+		// Dance Settings
+		hwndTrackBarDanceAmplifier = CreateWindowEx(
+			NULL,
+			TRACKBAR_CLASS,
+			NULL,
+			WS_VISIBLE | WS_CHILD | TBS_HORZ | TBS_BOTTOM | TBS_DOWNISLEFT | TBS_AUTOTICKS | TBS_TOOLTIPS,
+			10, 170,
+			180, 30,
+			hwnd,
+			(HMENU)TB_TrackBarDanceAmplifier,
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			nullptr
+		);
+
+		SendMessage(hwndTrackBarDanceAmplifier, TBM_SETRANGE, FALSE, MAKELPARAM(50, 200));
+		SendMessage(hwndTrackBarDanceAmplifier, TBM_SETTICFREQ, (WPARAM)10, NULL);
+		SendMessage(hwndTrackBarDanceAmplifier, TBM_SETPOS, TRUE, trackBarPos);
+
+		hwndComboBoxDanceModeMoveTo = CreateWindowEx(
+			NULL,
+			WC_COMBOBOX,
+			L"Mode MoveTo",
+			WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST,
+			210, 175,
+			110, 100,
+			hwnd,
+			(HMENU)CB_ComboBoxDanceModeMoveTo,
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			nullptr
+		);
+
+		SendMessage(hwndComboBoxDanceModeMoveTo, CB_ADDSTRING, NULL, (LPARAM)&modeNone);
+		SendMessage(hwndComboBoxDanceModeMoveTo, CB_ADDSTRING, NULL, (LPARAM)&modeStandard);
+		SendMessage(hwndComboBoxDanceModeMoveTo, CB_ADDSTRING, NULL, (LPARAM)&modeFlowing);
+		SendMessage(hwndComboBoxDanceModeMoveTo, CB_ADDSTRING, NULL, (LPARAM)&modePredicting);
+		SendMessage(hwndComboBoxDanceModeMoveTo, CB_SETCURSEL, (WPARAM)modeMoveTo, NULL);
+
+		hwndComboBoxDanceModeSlider = CreateWindowEx(
+			NULL,
+			WC_COMBOBOX,
+			L"Mode Slider",
+			WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST,
+			330, 175,
+			110, 100,
+			hwnd,
+			(HMENU)CB_ComboBoxDanceModeSlider,
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			nullptr
+		);
+
+		SendMessage(hwndComboBoxDanceModeSlider, CB_ADDSTRING, NULL, (LPARAM)&modeNone);
+		SendMessage(hwndComboBoxDanceModeSlider, CB_ADDSTRING, NULL, (LPARAM)&modeStandard);
+		SendMessage(hwndComboBoxDanceModeSlider, CB_ADDSTRING, NULL, (LPARAM)&modeFlowing);
+		SendMessage(hwndComboBoxDanceModeSlider, CB_ADDSTRING, NULL, (LPARAM)&modePredicting);
+		SendMessage(hwndComboBoxDanceModeSlider, CB_SETCURSEL, (WPARAM)modeSlider, NULL);
+
+		hwndComboBoxDanceModeSpinner = CreateWindowEx(
+			NULL,
+			WC_COMBOBOX,
+			L"Mode Spinner",
+			WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST,
+			450, 175,
+			110, 100,
+			hwnd,
+			(HMENU)CB_ComboBoxDanceModeSpinner,
+			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			nullptr
+		);
+
+		SendMessage(hwndComboBoxDanceModeSpinner, CB_ADDSTRING, NULL, (LPARAM)&modeNone);
+		SendMessage(hwndComboBoxDanceModeSpinner, CB_ADDSTRING, NULL, (LPARAM)&modeStandard);
+		SendMessage(hwndComboBoxDanceModeSpinner, CB_ADDSTRING, NULL, (LPARAM)&modeFlowing);
+		SendMessage(hwndComboBoxDanceModeSpinner, CB_ADDSTRING, NULL, (LPARAM)&modePredicting);
+		SendMessage(hwndComboBoxDanceModeSpinner, CB_SETCURSEL, (WPARAM)modeSpinner, NULL);
 
 		// Utilities
 		hwndProgressBar = CreateWindowEx(
@@ -552,8 +752,8 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			SetDlgItemText(hDlg, IDC_THREADOFFSET + i, LPCTSTR(str.c_str()));
 		}
-		
-		
+
+
 		LPCTSTR& inputKeyboard = (LPCTSTR&)L"Keyboard";
 		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_ADDSTRING, NULL, (LPARAM)&inputKeyboard);
 		LPCTSTR& inputMouse = (LPCTSTR&)L"Mouse";
@@ -561,18 +761,23 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		SendDlgItemMessage(hDlg, IDC_INPUTMETHODE, CB_SETCURSEL, NULL, (LPARAM)!inputKeyBoard);
 
 
-		wstring str;
+		TCHAR* keyText = new TCHAR[MAXCHAR];
+		if (GetKeyNameText(inputMainKey << 16, keyText, MAXCHAR)) {
+			SetDlgItemText(hDlg, IDC_INPUTKEYMAIN, keyText);
+		}
 
-		str = (wchar_t)inputMainKey;
-		SetDlgItemText(hDlg, IDC_INPUTKEYMAIN, LPCTSTR(str.c_str()));
-		str = (wchar_t)inputAltKey;
-		SetDlgItemText(hDlg, IDC_INPUTKEYALT, LPCTSTR(str.c_str()));
+		if (GetKeyNameText(inputAltKey << 16, keyText, MAXCHAR)) {
+			SetDlgItemText(hDlg, IDC_INPUTKEYALT, keyText);
+		}
 
+		delete keyText;
 
 		return (INT_PTR)TRUE;
 	}
 	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK) {
+		switch (LOWORD(wParam)) {
+		case IDOK:
+		{
 			TCHAR method[MAXCHAR];
 
 			GetDlgItemText(hDlg, IDC_INPUTMETHODE, (LPTSTR)method, MAXCHAR);
@@ -582,12 +787,12 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			TCHAR key[MAXCHAR];
 
 			GetDlgItemText(hDlg, IDC_INPUTKEYMAIN, (LPTSTR)key, MAXCHAR);
-			inputMainKey = key[0];
-
-			GetDlgItemText(hDlg, IDC_INPUTKEYALT, (LPTSTR)key, MAXCHAR);
-			inputAltKey = key[0];
-
+			inputMainKey = LOWORD(OemKeyScan(key[0]));
 			
+			GetDlgItemText(hDlg, IDC_INPUTKEYALT, (LPTSTR)key, MAXCHAR);
+			inputAltKey = LOWORD(OemKeyScan(key[0]));
+
+
 			TCHAR offset[MAXCHAR];
 			bool subtrating = FALSE;
 
@@ -618,10 +823,10 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 				}
 			}
-			
+
 
 			UpdateConfigFile({ inputMethod, inputKeys, timerPointer });
-			
+
 
 			timeAddress = GetTimeAddress();
 
@@ -649,14 +854,15 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			return (INT_PTR)TRUE;
 		}
-		else if (LOWORD(wParam) == IDCANCEL) {
+		case IDCANCEL:
+		{
 			/* EventLog */	fwprintf(wEventLog, L"            Nothing was changed.\n");
 			fflush(wEventLog);
 
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
 		}
-		break;
+		}
 	} return (INT_PTR)FALSE;
 }
 
@@ -665,7 +871,7 @@ INT_PTR CALLBACK ErrorBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	UNREFERENCED_PARAMETER(lParam);
 	switch (message) {
 	case WM_INITDIALOG:
-		SetDlgItemTextW(hDlg, IDT_ERRORTEXT, LPCWSTR(L"File Not Found."));
+		SetDlgItemTextW(hDlg, IDT_ERRORTEXT, LPCWSTR(L"GENERIC ERROR TEXT"));
 		return (INT_PTR)TRUE;
 
 	case WM_COMMAND:

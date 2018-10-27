@@ -229,9 +229,6 @@ void ParseSong(LPCTSTR songPath) {
 			}
 		}
 	}
-
-	if (path)
-		/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Beatmap parsed without major errors.\n");
 }
 
 
@@ -248,7 +245,10 @@ bool OpenSongAuto(wstring title) {
 		difficultyName = title.substr(title.find_last_of(L"["));
 	}
 
-	beatmapName = title.substr(title.find(title.at(8)), title.find_last_of(L"[") - 9);
+	beatmapName = title.substr(8U, title.find_last_of(L"[") - 1U - 8U);
+
+	if (beatmapName.at(beatmapName.length() - 1U) == L' ')
+		beatmapName.pop_back();
 
 	for (unsigned int i = 0; i < beatmapName.size() - 1; i++) {
 		switch (beatmapName.at(i)) {
@@ -284,9 +284,7 @@ bool OpenSongAuto(wstring title) {
 
 
 	DeleteFile(L"Data\\BMData.txt");
-	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Cleared BMData from previous writing.\n");
-
-	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting SFData reading...\n");
+	
 
 	wfstream rSFData; rSFData.open(L"Data\\SFData.txt", wfstream::in);
 
@@ -298,10 +296,9 @@ bool OpenSongAuto(wstring title) {
 	while (rSFData) {
 		getline(rSFData, readLine);
 		size_t findPos = readLine.find(beatmapName);
-		if (findPos != string::npos) {
-			if (readLine.substr(findPos) == beatmapName) {
-				/* EventLog */	fprintf(wEventLog, "[EVENT]  Starting BMData writing...\n");
-
+		if (findPos != wstring::npos) {
+			if (readLine.substr(findPos) == beatmapName
+			|| readLine.substr(findPos, readLine.find_last_of('(') - 1U - findPos) == beatmapName) {
 				wfstream wBMData; wBMData.open(L"Data\\BMData.txt", wfstream::out | wfstream::app);
 				wBMData << L"[BeatmapDifficulties]\n";
 
@@ -319,16 +316,12 @@ bool OpenSongAuto(wstring title) {
 				wBMData << L"\n";
 
 				wBMData.close();
-
-				/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData writing.\n");
 			}
 		}
 	}
 	rSFData.close();
 	readLine.clear();
 
-	/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished SFData reading.\n");
-	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting BMData reading...\n");
 
 	wfstream rBMData; rBMData.open("Data\\BMData.txt", wfstream::in);
 
@@ -351,8 +344,6 @@ bool OpenSongAuto(wstring title) {
 		}
 	}
 	rBMData.close();
-
-	/* EventLog */	fwprintf(wEventLog, L"[EVENT]    Finished BMData reading.\n");
 
 	return FALSE;
 }
@@ -457,7 +448,7 @@ void SongFileCheck(bool songFileCheck, wstring selectedBy) {
 		SendMessage(hwndProgressBar, PBM_SETPOS, WPARAM(0), NULL);
 	}
 	else {
-		statusText = L"No Beatmap Selected!";
+		statusText = L"No New Beatmap Selected! Using The Last Selected Beatmap.";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
 
 		/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  No Beatmap was selected by " + selectedBy).c_str());

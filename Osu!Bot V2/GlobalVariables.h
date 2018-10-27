@@ -2,6 +2,7 @@
 
 
 #define MIN(X, Y) X < Y ? X : Y
+#define CLAMP(minValue, value, maxValue) value > maxValue ? maxValue : value < minValue ? minValue : value
 #define TWO_PI static_cast<float>(M_PI * 2.f)
 #define HALF_PI static_cast<float>(M_PI / 2.f)
 
@@ -11,8 +12,10 @@
 
 #define STACK_LENIENCE 3
 
-#define MODE_STANDARD 2001
-#define MODE_FLOWING 2002
+#define MODE_NONE 0
+#define MODE_STANDARD 1
+#define MODE_FLOWING 2
+#define MODE_PREDICTING 3
 
 
 #include "stdafx.h"
@@ -45,8 +48,8 @@ POINT cursorPoint;
 
 INPUT input;
 
-WORD inputMainKey = 90;
-WORD inputAltKey = 88;
+WORD inputMainKey = 45;
+WORD inputAltKey = 44;
 
 vector<int> offsets(5);
 
@@ -54,7 +57,9 @@ int
 nHeight = 290,
 nWidth = 585;
 
-int objectNumber;
+int
+objectNumber = 0,
+trackBarPos = 100;
 
 int threadOffset = 0x0;
 
@@ -62,9 +67,9 @@ int osuWindowX, osuWindowY;
 int	songTime, prevTime, prevInputTime;
 
 int
-modeMoveTo = MODE_FLOWING,
-modeSlider = MODE_FLOWING,
-modeSpinner = MODE_STANDARD;
+modeMoveTo = MODE_NONE,
+modeSlider = MODE_NONE,
+modeSpinner = MODE_NONE;
 
 float
 multiplierX, multiplierY,
@@ -75,15 +80,15 @@ circleSize,
 sliderMultiplier,
 sliderTickRate,
 stackOffset,
-BPM;
+Amplifier = 1.f;
 
 bool
 songStarted,
 pathSet,
-autoOpenSong,
+autoOpenSong = true,
 hardrockFlip,
 altKey,
-inputFlip,
+inputFlip = true,
 inputKeyBoard,
 firstStart = true;
 

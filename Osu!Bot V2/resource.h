@@ -17,7 +17,6 @@
 #define IDR_MAINFRAME                   128
 #define IDB_BITMAP1                     133
 #define IDT_ERRORTEXT                   1001
-#define IDC_PROGRESS1                   1002
 #define IDC_BUTTON_CANCEL               1003
 #define IDC_BUTTON_ACCEPT               1004
 #define IDC_THREADOFFSET                1005
@@ -26,21 +25,10 @@
 #define IDC_POINTEROFFSET3              1008
 #define IDC_POINTEROFFSET4              1009
 #define IDC_POINTEROFFSET5              1010
-#define IDC_INPUTKEYMAIN                1011
-#define IDC_INPUTKEYALT                 1012
+#define IDC_INPUTKEYALT					1011
+#define IDC_INPUTKEYMAIN                1012
 #define IDC_INPUTMETHODE                1013
-#define IDC_INPUTKEYMAIN2               1013
 #define ID_FILE_SETTINGS                32771
-#define ID_DSAFDF_SDF                   32772
-#define ID_DSAFDF_SDF32773              32773
-#define ID_SDF_SDFD                     32774
-#define ID_SDF_SDFD32775                32775
-#define ID_SDFD_SDFDF                   32776
-#define ID_SDFD_SDFDSF                  32777
-#define ID_SDFD_SDFS                    32778
-#define ID_SDFD_SDF                     32779
-#define ID_SDF_SDF                      32780
-#define ID_SDFD_SDF32781                32781
 #define ID_FILE_DATAFILES               32782
 #define ID_DATAFILES_OPENSONGFOLDER     32783
 #define ID_DATAFILES_OPENBEATMAPFOLDER  32784
@@ -48,9 +36,7 @@
 #define ID_DATAFILES_OPENSONGDATA       32786
 #define ID_DATAFILES_OPENBEATMAPDATA    32787
 #define ID_DATAFILES_OPENDATAFOLDER     32788
-#define ID_OPENDATAFOLDER_AWDASD        32789
 #define ID_DATAFILES_OPENEVENTLOG       32790
-#define ID_FILE_ASDF                    32791
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -60,7 +46,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32794
-#define _APS_NEXT_CONTROL_VALUE         1013
+#define _APS_NEXT_CONTROL_VALUE         1019
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

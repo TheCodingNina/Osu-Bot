@@ -25,10 +25,10 @@ LPVOID GetTimeAddress() {
 
 
 void TimeThread() {
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 	while (true) {
 		ReadProcessMemory(osuProcessHandle, timeAddress, &songTime, 4, NULL);
-		this_thread::sleep_for(chrono::microseconds(100));
+		this_thread::sleep_for(chrono::milliseconds(1));
 	}
 }
 
@@ -38,7 +38,7 @@ void AutoPlay(wstring nowPlaying) {
 
 	wstring beatmap(nowPlaying.begin() + 8, nowPlaying.end());
 
-	if (statusText != L"No Beatmap Selected!")
+	if (statusText != L"No New Beatmap Selected! Using The Last Selected Beatmap.")
 		statusText = L"Now Playing: " + beatmap;
 	DrawTextToWindow(hWnd, statusText, rectStatus);
 
@@ -56,17 +56,35 @@ void AutoPlay(wstring nowPlaying) {
 
 			// Movement calls:
 			switch (modeMoveTo) {
+			case MODE_NONE:
+				break;
+			
 			case MODE_STANDARD:
 				MoveToStandard(&hit);
 				break;
 
 			case MODE_FLOWING:
-				MoveToFlowing(&hitObjects, nObject);
+				MoveToCircle(&hitObjects, nObject, FlowVectorPoint);
+				break;
+			
+			case MODE_PREDICTING:
+				MoveToCircle(&hitObjects, nObject, PredictionVectorPoint);
 				break;
 			}
 
-			if (hit.getHitType() == HIT_SLIDER) {
+			if ((hit.getHitType() == HIT_CIRCLE || modeSlider == MODE_NONE) && modeMoveTo != MODE_NONE) {
+				SendKeyPress(&hit);
+
+				int keyPressTime = (static_cast<int>(hit.getBPM() / 4.f), 5);
+				this_thread::sleep_for(chrono::milliseconds(keyPressTime));
+
+				SendKeyRelease(&hit);
+			}
+			else if (hit.getHitType() == HIT_SLIDER) {
 				switch (modeSlider) {
+				case MODE_NONE:
+					break;
+				
 				case MODE_STANDARD:
 					SliderStandard(&hit);
 					break;
@@ -74,16 +92,27 @@ void AutoPlay(wstring nowPlaying) {
 				case MODE_FLOWING:
 					SliderFlowing(&hitObjects, nObject);
 					break;
+
+				case MODE_PREDICTING:
+					SliderFlowing(&hitObjects, nObject);
+					break;
 				}
 			}
 			else if (hit.getHitType() == HIT_SPINNER) {
 				switch (modeSpinner) {
+				case MODE_NONE:
+					break;
+				
 				case MODE_STANDARD:
 					SpinnerStandard(&hit);
 					break;
 
 				case MODE_FLOWING:
+					SpinnerStandard(&hit);
+					break;
 
+				case MODE_PREDICTING:
+					SpinnerStandard(&hit);
 					break;
 				}
 			}
@@ -93,30 +122,24 @@ void AutoPlay(wstring nowPlaying) {
 		}
 		else {
 			while (!songStarted && !firstStart) {
-				this_thread::sleep_for(chrono::microseconds(50));
+				this_thread::sleep_for(chrono::milliseconds(5));
 			}
 			nObject -= (UINT)2;
 		}
-		this_thread::sleep_for(chrono::microseconds(50));
 	}
-
-	this_thread::sleep_for(chrono::milliseconds(1000));
 
 	statusText = L"Waiting for user...";
 	DrawTextToWindow(hWnd, statusText, rectStatus);
-
-	/* EventLog */	fwprintf(wEventLog, L"[EVENT]  AutoPlay thread finished.\n");
-	fflush(wEventLog);
 
 	songStarted = FALSE;
 }
 
 
 void GameActiveChecker() {
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 	while (true) {
 		RECT rect;
-		POINT w = { 0, 8 };
+		POINT w = { 0, 6 };
 		GetClientRect(osuWindow, &rect);
 		ClientToScreen(osuWindow, &w);
 
@@ -135,7 +158,7 @@ void GameActiveChecker() {
 		osuWindowY = w.y + yOffset;
 
 		TCHAR titleC[MAXCHAR];
-		GetWindowTextW(osuWindow, (LPTSTR)titleC, MAXCHAR);
+		GetWindowText(osuWindow, (LPTSTR)titleC, MAXCHAR);
 		wstring title(titleC);
 
 		if (title != L"osu!" && title != L"" && pathSet) {
@@ -145,9 +168,6 @@ void GameActiveChecker() {
 				if (autoOpenSong) {
 					SongFileCheck(OpenSongAuto(title), autoSelect);
 				}
-
-				/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Starting AutoPlay thread!\n");
-				fflush(wEventLog);
 
 				thread AutoThread(AutoPlay, title);
 				AutoThread.detach();
@@ -178,7 +198,7 @@ void GameActiveChecker() {
 				}
 			}
 		}
-		this_thread::sleep_for(chrono::milliseconds(5));
+		this_thread::sleep_for(chrono::milliseconds(100));
 	}
 }
 
@@ -215,7 +235,7 @@ void FindGame() {
 		|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
 		CloseHandle(osuProcessHandle);
 
-		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddres NOT FOUND!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddress NOT FOUND!\n");
 		fflush(wEventLog);
 
 		statusText = L"timeAddress NOT found!   Please start \"osu!\" BEFORE starting \"Osu!Bot\"!";
@@ -227,7 +247,7 @@ void FindGame() {
 	wstringstream timeAddressString;
 	timeAddressString << "0x" << hex << (UINT)timeAddress;
 
-	/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddres\" FOUND!  Starting Checker and Time threads!\n           timeAddres: " + timeAddressString.str() + L"\n").c_str());
+	/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddress\" FOUND!  Starting Checker and Time threads!\n            timeAddress: " + timeAddressString.str() + L"\n").c_str());
 	fflush(wEventLog);
 
 	statusText = L"Waiting for user...";

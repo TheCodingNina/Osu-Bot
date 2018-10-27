@@ -70,9 +70,26 @@ class TimingPoint {
 	float BPM;
 public:
 	explicit TimingPoint(wstring TimingString) {
-		auto tokens = split_string(TimingString, L",");
+		vector<wstring> tokens = split_string(TimingString, L",");
 		TimingTime = stoi(tokens.at(0));
-		BPM = stof(tokens.at(1));
+		try {
+			BPM = stof(tokens.at(1));
+		}
+		catch (...) {
+			wstring bpm = tokens.at(1);
+			wstring newBpm;
+			if (bpm.find('-') != string::npos) {
+				newBpm = L"MIN_FLOAT";
+				BPM = 0.f;
+			}
+			else {
+				newBpm = L"MAX_FLOAT";
+				BPM = FLT_MAX;
+			}
+			
+			/* EventLog */  fwprintf(wEventLog, (L"[ERROR]  BPM out of Range --> " + bpm + L".\n" + L"            Setting BPM to " + newBpm + L" value.\n").c_str());
+			fflush(wEventLog);
+		}
 	}
 
 	float getBPM() const {
@@ -120,11 +137,11 @@ public:
 	}
 
 	int getStartTime() {
-		return startTime - 4;
+		return startTime;
 	}
 
 	int getEndTime() {
-		return endTime + 2;
+		return endTime;
 	}
 
 	int getStack() {

@@ -13,7 +13,8 @@ enum configurationSettings: wchar_t {
 	songsFolderPath = L's',
 	inputKeys = L'k',
 	inputMethod = L'b',
-	timerPointer = L'h'
+	timerPointer = L'h',
+	danceSettings = L'i'
 };
 
 
@@ -32,7 +33,7 @@ bool WriteToConfigFile(vector<wstring> configStrings) {
 	catch (const exception &e) {
 		wstringstream ss; ss << e.what();
 
-		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't write to configuration file!\n            with error: " + ss.str()).c_str());
+		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't write to configuration file!\n            with error: " + ss.str() + L"\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -57,16 +58,23 @@ bool FillMap(map<wstring, LPVOID> &configValues, wstring &configString, const co
 		configValues[L"FolderPath"] = &songsPath;
 		break;
 
+	case inputMethod:
+		configString = L"[Input Method]";
+		configValues[L"UseKeyboard"] = &inputKeyBoard;
+		break;
+
 	case inputKeys:
 		configString = L"[Input Keys]";
 		configValues[L"MainKey"] = &inputMainKey;
 		configValues[L"AltKey"] = &inputAltKey;
 		break;
 
-	case inputMethod:
-		configString = L"[Input Method]";
-		configValues[L"UseKeyboard"] = &inputKeyBoard;
-		break;
+	case danceSettings:
+		configString = L"[Dance Settings]";
+		configValues[L"Amplifier"] = &trackBarPos;
+		configValues[L"ModeMoveTo"] = &modeMoveTo;
+		configValues[L"ModeSlider"] = &modeSlider;
+		configValues[L"ModeSpinner"] = &modeSpinner;
 
 	default:
 		return FALSE;
@@ -83,19 +91,25 @@ bool CreateNewConfigFile() {
 			L"FolderPath : ",
 			L"",
 			L"[Timer Pointer]",
-			L"Offset0 : e0",
-			L"Offset1 : e0",
-			L"Offset2 : 4cc",
-			L"Offset3 : 2e4",
-			L"Offset4 : 128",
-			L"ThreadOffset : -32c",
+			L"Offset0 : 0",
+			L"Offset1 : 1F0",
+			L"Offset2 : 22C",
+			L"Offset3 : 428",
+			L"Offset4 : 8C",
+			L"ThreadOffset : -32C",
 			L"",
-			L"[Input Keys] //Currently only works with non-special keys!",
+			L"[Input Methode]",
+			L"UseKeyboard : True",
+			L"",
+			L"[Input Keys] //Currently only works with ASCII convertable keys!",
 			L"MainKey : Z",
 			L"AltKey : X",
 			L"",
-			L"[Input Methode]",
-			L"UseKeyboard : true",
+			L"[Dance Settings]",
+			L"Amplifier : 100",
+			L"ModeMoveTo : 3",
+			L"ModeSlider : 3",
+			L"ModeSpinner : 1",
 			L""
 		};
 
@@ -105,7 +119,7 @@ bool CreateNewConfigFile() {
 	catch (const exception &e) {
 		wstringstream ss; ss << e.what();
 
-		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't create a configuration file!\n            with error: " + ss.str()).c_str());
+		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't create a configuration file!\n            with error: " + ss.str() + L"\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -150,8 +164,11 @@ bool AddSettingString(wstring &settingString, const wstring configSetting, const
 	case L'k':
 	{
 		WORD* settingValue = (WORD*)configValue;
-		TCHAR keyValue = (TCHAR)*settingValue;
-		settingString = configSetting + L" : " + keyValue;
+		TCHAR* keyText = new TCHAR[MAXCHAR];
+		if (GetKeyNameText(*settingValue << 16, keyText, MAXCHAR)) {
+			settingString = configSetting + L" : " + keyText;
+		}
+		delete keyText;
 
 		break;
 	}
@@ -257,7 +274,7 @@ bool UpdateConfigFile(const vector<configurationSettings> settingsList) {
 	catch (const exception &e) {
 		wstringstream ss; ss << e.what();
 
-		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't update a configuration file!\n            with error: " + ss.str()).c_str());
+		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't update a configuration file!\n            with error: " + ss.str() + L"\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -341,8 +358,8 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 			}
 			case L'k':
 			{
-				wchar_t charValue = readLine.substr(valuePos)[0];
-				WORD KeyValue = (WORD)charValue;
+				TCHAR charValue = readLine.substr(valuePos)[0];
+				WORD KeyValue = LOWORD(OemKeyScan(charValue));
 
 				WORD* configValue = (WORD*)(configValues.at(configSetting));
 				*configValue = KeyValue;
@@ -379,7 +396,7 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 	catch (const exception &e) {
 		wstringstream ss; ss << e.what();
 
-		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't read from configuration file!\n            with error: " + ss.str()).c_str());
+		/* EventLog */	fwprintf(wEventLog, (L"[ERROR]  Couldn't read from configuration file!\n            with error: " + ss.str() + L"\n").c_str());
 		fflush(wEventLog);
 		return FALSE;
 	}
@@ -388,12 +405,12 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 bool ReadAllConfigSettings() {
 	try {
 		if (ReadFromConfigFile(timerPointer))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  TimerPointer get succesfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  TimerPointer get successfull.\n");
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  TimerPointer not specified!\n");
 
 		if (ReadFromConfigFile(songsFolderPath)) {
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  SongsFolderPath get succesfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  SongsFolderPath get successfull.\n");
 			if (songsPath.compare(L"") != 0)
 				pathSet = TRUE;
 			else
@@ -405,14 +422,19 @@ bool ReadAllConfigSettings() {
 		}
 
 		if (ReadFromConfigFile(inputKeys))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputKeys get succesfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputKeys get successfull.\n");
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  InputKeys not specified!\n");
 
 		if (ReadFromConfigFile(inputMethod))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputMethod get succesfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputMethod get successfull.\n");
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  InputMethod not specified!\n");
+
+		if (ReadFromConfigFile(danceSettings))
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  DanceSettings get successfull.\n");
+		else
+			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  DanceSettings not specified!\n");
 
 		return TRUE;
 	}

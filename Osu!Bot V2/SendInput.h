@@ -6,16 +6,14 @@
 
 
 void SendKeyPress(HitObject *hitObject) {
-	BPM = hitObject->getBPM() == 0.f ? BPM * 1.02f : hitObject->getBPM();
-
 	if ((static_cast<float>(hitObject->getStartTime() - prevInputTime) > 125.f) || altKey == TRUE) {
 		if (inputKeyBoard) {
 			input.type = INPUT_KEYBOARD;
 			input.ki.dwFlags = NULL;
 			if (inputFlip)
-				input.ki.wVk = inputAltKey;
+				input.ki.wVk = inputAltKey * 2U;
 			else
-				input.ki.wVk = inputMainKey;
+				input.ki.wVk = inputMainKey * 2U;
 		}
 		else {
 			input.type = INPUT_MOUSE;
@@ -31,9 +29,9 @@ void SendKeyPress(HitObject *hitObject) {
 			input.type = INPUT_KEYBOARD;
 			input.ki.dwFlags = NULL;
 			if (inputFlip)
-				input.ki.wVk = inputMainKey;
+				input.ki.wVk = inputMainKey * 2U;
 			else
-				input.ki.wVk = inputAltKey;
+				input.ki.wVk = inputAltKey * 2U;
 		}
 		else {
 			input.type = INPUT_MOUSE;
