@@ -10,7 +10,7 @@ I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/
 https://www.youtube.com/playlist?list=PLkSZ7HI4dIRgKJmiZ_L2XXK7PqpaEbNSl
 
 ## Latest Release
-https://github.com/DDDinggo22/Osu-Bot/releases/tag/v2.5.50
+https://github.com/DDDinggo22/Osu-Bot/releases/
 
 ## Usage Instructions
 0. Unzip anywhere you like.
