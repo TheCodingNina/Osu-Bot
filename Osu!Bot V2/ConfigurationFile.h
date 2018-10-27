@@ -333,12 +333,12 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 				wstringstream ss;
 				int hexValue;
 				if (readLine.at(valuePos) == L'-') {
-					ss << hex << readLine.substr(valuePos + 1);
+					ss << hex << nouppercase << readLine.substr(valuePos + 1);
 					ss >> hexValue;
 					hexValue *= -1;
 				}
 				else {
-					ss << hex << readLine.substr(valuePos);
+					ss << hex << nouppercase << readLine.substr(valuePos);
 					ss >> hexValue;
 				}
 
