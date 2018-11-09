@@ -4,130 +4,148 @@
 
 #include "OsuBot.h"
 
+#ifdef _WIN64 // Offsets for _WIN64 compatibility
+ULONG xBaseOffset = 8192UL;
+ULONG xStackOffset = 90112UL;
+#elif _WIN32 // Offsets are not needed (set to 0UL) on _WIN32
+ULONG xBaseOffset = 0UL;
+ULONG xStackOffset = 0UL;
+#endif // Offsets for _WIN64 compatibility
 
 typedef struct _CLIENT_ID {
-	PVOID UniqueProcess;
-	PVOID UniqueThread;
+	LPVOID UniqueProcess;
+	LPVOID UniqueThread;
 } CLIENT_ID, *PCLIENT_ID;
 
 typedef struct _THREAD_BASIC_INFORMATION {
 	LONG ExitStatus;
-	PVOID TebBaseAddress;
+	LPVOID TebBaseAddress;
 	CLIENT_ID ClientId;
 	KAFFINITY AffinityMask;
-	DWORD Priority;
-	DWORD BasePriority;
+	ULONG Priority;
+	ULONG BasePriority;
 } THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
 
 enum THREADINFOCLASS {
-	ThreadBasicInformation,
+	ThreadBasicInformation
 };
 
 
 LPVOID GetBaseAddress(HANDLE hProcess, HANDLE hThread) {
 	LPCTSTR moduleName = L"ntdll.dll";
-	bool loadedManually = false;
-
+	bool loadedManually = FALSE;
 
 	HMODULE hModule = GetModuleHandle(moduleName);
 
 	if (!hModule) {
 		hModule = LoadLibrary(moduleName);
-		loadedManually = true;
+		loadedManually = TRUE;
 	}
 
-	LONG(__stdcall *NtQueryInformationThread)(HANDLE ThreadHandle, THREADINFOCLASS ThreadInformationClass, PVOID ThreadInformation, ULONG ThreadInformationLength, PULONG ReturnLength);
+	LONG(__stdcall *NtQueryInformationThread)(HANDLE ThreadHandle, THREADINFOCLASS ThreadInformationClass, LPVOID ThreadInformation, ULONG ThreadInformationLength, PULONG ReturnLength);
 	NtQueryInformationThread = reinterpret_cast<decltype(NtQueryInformationThread)>(GetProcAddress(hModule, "NtQueryInformationThread"));
 
 	if (NtQueryInformationThread) {
-		NT_TIB tib = { 0 };
-		THREAD_BASIC_INFORMATION tbi = { 0 };
+		NT_TIB tib = { NULL };
+		THREAD_BASIC_INFORMATION tbi = { NULL };
 
-		LONG status = NtQueryInformationThread(hThread, ThreadBasicInformation, &tbi, sizeof(tbi), nullptr);
-		if (status >= 0) {
+		LONG ntStatus = NtQueryInformationThread(hThread, ThreadBasicInformation, &tbi, sizeof(tbi), nullptr);
+		if (ntStatus >= NULL) {
+			tbi.TebBaseAddress = UlongToPtr(PtrToUlong(tbi.TebBaseAddress) + xBaseOffset);
+
 			ReadProcessMemory(hProcess, tbi.TebBaseAddress, &tib, sizeof(tib), nullptr);
 
-			if (loadedManually)
+			if (loadedManually) {
 				FreeLibrary(hModule);
+				loadedManually = FALSE;
+			}
+			/* EventLog */	fwprintf(wEventLog, (L"[DEBUG]  GetBaseAddress / TebBaseAddress = " + to_wstring(PtrToUlong(tbi.TebBaseAddress)) + L"\n").c_str());
+			/* EventLog */	fwprintf(wEventLog, (L"[DEBUG]  GetBaseAddress / StackBase = " + to_wstring(PtrToUlong(tib.StackBase) + xStackOffset) + L"\n").c_str()); fflush(wEventLog);
 
-			return tib.StackBase;
+			return UlongToPtr(PtrToUlong(tib.StackBase) + xStackOffset);
 		}
 	}
 
-	if (loadedManually)
+	if (loadedManually) {
 		FreeLibrary(hModule);
+		loadedManually = FALSE;
+	}
 
 	return NULL;
 }
 
-DWORD GetThreadStartAddress(HANDLE processHandle, HANDLE hThread) {
-	DWORD stacktop = 0, result = 0;
+ULONG GetThreadStartAddress(HANDLE hProcess, HANDLE hThread) {
+	ULONG stacktop = NULL;
+	ULONG result = NULL;
 
 	MODULEINFO mi;
 
-	GetModuleInformation(processHandle, GetModuleHandle(L"kernel32.dll"), &mi, sizeof(mi));
-	stacktop = (DWORD)GetBaseAddress(processHandle, hThread);
+	HMODULE hModule = LoadLibraryEx(L"kernel32.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+
+	GetModuleInformation(hProcess, hModule, &mi, sizeof(mi));
+	stacktop = PtrToUlong(GetBaseAddress(hProcess, hThread));
 
 	CloseHandle(hThread);
 
 	if (stacktop) {
-		const int buf32Size = 4096;
-		DWORD* buf32 = new DWORD[buf32Size];
+		const LONG buff32size = 4096L;
+		ULONG* buff32 = new ULONG[buff32size];
 
-		if (ReadProcessMemory(processHandle, (LPCVOID)(stacktop - buf32Size), buf32, buf32Size, NULL)) {
-			for (int i = buf32Size / 4 - 1; i >= 0; --i) {
-				if (buf32[i] >= (DWORD)mi.lpBaseOfDll && buf32[i] <= (DWORD)mi.lpBaseOfDll + mi.SizeOfImage) {
-					result = stacktop - buf32Size + i * 4;
+		if (ReadProcessMemory(hProcess, UlongToPtr(stacktop - (ULONG)buff32size), buff32, buff32size, nullptr)) {
+			for (LONG i = buff32size / 4L - 1L; i >= NULL; --i) {
+				if (buff32[i] >= PtrToUlong(mi.lpBaseOfDll) && buff32[i] <= PtrToUlong(mi.lpBaseOfDll) + mi.SizeOfImage) {
+					result = (stacktop - (ULONG)buff32size + i * 4UL);
 					break;
 				}
 			}
 		}
-		delete buf32;
+		delete buff32;
 	}
+
+	FreeModule(hModule);
+	
+	/* EventLog */	fwprintf(wEventLog, (L"[DEBUG]  GetThreadStartAddress / result = " + to_wstring(result) + L"\n").c_str()); fflush(wEventLog);
+
 	return result;
 }
 
-vector<DWORD> GetThreadStack(HANDLE processHandle, vector<DWORD> threadList) {
-	vector<DWORD> threadStack;
-
-	for (auto it = threadList.begin(); it != threadList.end(); ++it) {
-		HANDLE threadHandle = OpenThread(THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, *it);
-		DWORD threadStartAddress = GetThreadStartAddress(processHandle, threadHandle);
-		threadStack.push_back(threadStartAddress);
-	}
-
-	return threadStack;
+ULONG GetThreadStack(HANDLE hProcess, LPVOID thread) {
+	HANDLE hThread = OpenThread(THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, PtrToUlong(thread));
+	return GetThreadStartAddress(hProcess, hThread);
 }
 
-vector<DWORD> ThreadList(DWORD pid) {
-	vector<DWORD> vect;
-	HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+vector<LPVOID> GetThreadList(LPVOID pid) {
+	vector<LPVOID> threadList;
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, NULL);
 
-	if (h == INVALID_HANDLE_VALUE)
-		return vect;
+	if (hSnapshot == INVALID_HANDLE_VALUE) {
+		return threadList;
+	}
 
 	THREADENTRY32 te;
 	te.dwSize = sizeof(te);
-	if (Thread32First(h, &te)) {
+
+	if (Thread32First(hSnapshot, &te)) {
 		do {
 			if (te.dwSize >= FIELD_OFFSET(THREADENTRY32, th32OwnerProcessID) + sizeof(te.th32OwnerProcessID)) {
-				if (te.th32OwnerProcessID == pid) {
-					vect.push_back(te.th32ThreadID);
+				if ((ULONG)te.th32OwnerProcessID == PtrToUlong(pid)) {
+					threadList.push_back(ULongToPtr((ULONG)te.th32ThreadID));
 				}
 			}
 			te.dwSize = sizeof(te);
-		} while (Thread32Next(h, &te));
+		} while (Thread32Next(hSnapshot, &te));
 	}
 
-	return vect;
+	return threadList;
 }
 
-HANDLE GetHandle(DWORD processId) {
-	return OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+HANDLE GetHandle(LPVOID processId) {
+	return OpenProcess(PROCESS_ALL_ACCESS | PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, PtrToUlong(processId));
 }
 
-DWORD GetProcessID(string exe) {
+LPVOID GetProcessID(wstring exe) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+
 	if (hSnapshot == INVALID_HANDLE_VALUE) {
 		/* EventLog */	fwprintf(wEventLog, L"[ERROR]  Could not get a snapshot of the process \"osu!\"!\n");
 		fflush(wEventLog);
@@ -139,32 +157,31 @@ DWORD GetProcessID(string exe) {
 	}
 
 	PROCESSENTRY32 pe;
-	pe.dwSize = sizeof pe;
+	pe.dwSize = sizeof(pe);
 
 	if (Process32First(hSnapshot, &pe)) {
 		do {
-			wstring str = pe.szExeFile;
-			if (string(str.begin(), str.end()) == exe) {
+			if (pe.szExeFile == exe) {
 				CloseHandle(hSnapshot);
-				return pe.th32ProcessID;
+				return ULongToPtr((ULONG)pe.th32ProcessID);
 			}
 		} while (Process32Next(hSnapshot, &pe));
 	}
+
 	CloseHandle(hSnapshot);
 	return NULL;
 }
 
-LPVOID FindPointerAddress(HANDLE pHandle, LPVOID baseAddress, int pLevel) {
-	int address = reinterpret_cast<int>(baseAddress);
+LPVOID GetAddress(HANDLE hProcess, LPVOID baseAddress, UINT pLevel) {
+	ULONG address;
+	ULONG result;
 
-	for (int i = 0; i < pLevel; i++) {
-		ReadProcessMemory(pHandle, (LPCVOID)address, &address, 4, NULL);
-		address += offsets[i];
+	ReadProcessMemory(hProcess, baseAddress, &address, sizeof(address), nullptr);
+
+	for (UINT i = 1U; i < pLevel; i++) {
+		ReadProcessMemory(hProcess, ULongToPtr(address), &result, sizeof(result), nullptr);
+		address = result + offsets[i];
 	}
 
-	return reinterpret_cast<LPVOID>(address);
-}
-
-LPVOID GetAddress(HANDLE processHandle, LPVOID baseAddress, int pLevel) {
-	return FindPointerAddress(processHandle, baseAddress, pLevel);
+	return ULongToPtr(address);
 }

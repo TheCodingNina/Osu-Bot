@@ -209,7 +209,7 @@ public:
 			if (i == sliderSegments.size() - 1) {
 				float ct = 0.f;
 				while (currDist < pixelLength) {
-					vec2f p = PolyBezier(seg.points, seg.points.size() - 1, 0, ct);
+					vec2f p = PolyBezier(seg.points, INT(seg.points.size()) - 1, 0, ct);
 					currDist += (oldPoint - p).length();
 					
 					if (currDist > dist) {
@@ -224,7 +224,7 @@ public:
 			}
 
 			for (float ct = 0.f; ct < 1.f + (1.f / (seg.points.size() * 50.f - 1.f)); ct += 1.f / (seg.points.size() * 50.f - 1.f)) {
-				vec2f p = PolyBezier(seg.points, seg.points.size() - 1, 0, ct);
+				vec2f p = PolyBezier(seg.points, INT(seg.points.size()) - 1, 0, ct);
 
 				currDist += (oldPoint - p).length();
 				if (currDist > dist) {

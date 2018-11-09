@@ -15,7 +15,7 @@ static void DrawTextToWindow(HDC hdc, std::wstring str, RECT rect) {
 	DrawText(
 		hdc,
 		str.c_str(),
-		str.size(),
+		(UINT)str.size(),
 		&rect,
 		DT_LEFT | DT_WORDBREAK
 	);

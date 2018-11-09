@@ -2,6 +2,7 @@
 
 
 #define MIN(X, Y) X < Y ? X : Y
+#define MAX(X, Y) X > Y ? X : Y
 #define CLAMP(minValue, value, maxValue) value > maxValue ? maxValue : value < minValue ? minValue : value
 #define TWO_PI static_cast<float>(M_PI * 2.f)
 #define HALF_PI static_cast<float>(M_PI / 2.f)
@@ -31,11 +32,31 @@ FILE *wEventLog;
 
 vector<TimingPoint> timingPoints;
 vector<HitObject> hitObjects;
+vector<LONG> offsets(5);
 
-wstring beatmapPath;
-wstring displayBeatmapPath;
+wstring
+beatmapPath,
+displayBeatmapPath,
+songsPath,
+statusText = L"Start up...",
+songsFolderText = L"Select \"osu!\" Songs Folder.",
+songFileText = L"Select an \"osu! beatmap\"",
+userSelect = L"user.\n",
+autoSelect = L"Osu!Bot.\n";
 
-HWND osuWindow, hwndProgressBar;
+HWND
+hWnd,
+osuWindow,
+hwndButtonOpenSongFolder,
+hwndButtonOpenSongFile,
+hwndCheckBoxAutoOpenSong,
+hwndCheckBoxHardrockFlip,
+hwndTrackBarDanceAmplifier,
+hwndComboBoxDanceModeMoveTo,
+hwndComboBoxDanceModeSlider,
+hwndComboBoxDanceModeSpinner,
+hwndProgressBar;
+
 HANDLE osuProcessHandle;
 LPVOID timeAddress;
 
@@ -48,10 +69,8 @@ POINT cursorPoint;
 
 INPUT input;
 
-WORD inputMainKey = 45;
-WORD inputAltKey = 44;
-
-vector<int> offsets(5);
+WCHAR inputMainKey = 45;
+WCHAR inputAltKey = 44;
 
 int
 nHeight = 290,
@@ -89,20 +108,11 @@ autoOpenSong = true,
 hardrockFlip,
 altKey,
 inputFlip = true,
-inputKeyBoard,
+inputKeyBoard = true,
 firstStart = true;
 
+RECT rectSongsFolder = { 10, 10, nWidth - 140, 50 };
+RECT rectSongFile = { 10, 80, nWidth - 140, 120 };
+RECT rectStatus = { 15, nHeight - 65, nWidth - 30, rectStatus.top + 18 };
 
-wstring userSelect = L"user.\n";
-wstring autoSelect = L"Osu!Bot.\n";
-
-extern wstring songsPath;
-extern wstring statusText;
-extern wstring songFileText;
-extern HWND hWnd;
-extern HWND hwndButtonOpenSongFile;
-extern WORD inputMainKey;
-extern WORD inputAltKey;
-extern RECT rectStatus;
-extern RECT rectSongFile;
 #pragma endregion

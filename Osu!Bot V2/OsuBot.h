@@ -15,10 +15,14 @@ using namespace std;
 LPVOID GetTimeAddress() {
 	int pLevel = 5;
 	
-	DWORD osuProcessID = GetProcessID("osu!.exe");
+	LPVOID osuProcessID = GetProcessID(L"osu!.exe");
 	osuProcessHandle = GetHandle(osuProcessID);
 
-	LPVOID threadAddress = reinterpret_cast<LPVOID>((GetThreadStack(osuProcessHandle, ThreadList(osuProcessID)))[0] + threadOffset);
+	LPVOID thread = GetThreadList(osuProcessID)[0];
+	
+	ULONG threadStack = GetThreadStack(osuProcessHandle, thread);
+
+	LPVOID threadAddress = UlongToPtr(threadStack + (ULONG)threadOffset);
 
 	return GetAddress(osuProcessHandle, threadAddress, pLevel);
 }
@@ -27,7 +31,7 @@ LPVOID GetTimeAddress() {
 void TimeThread() {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 	while (true) {
-		ReadProcessMemory(osuProcessHandle, timeAddress, &songTime, 4, NULL);
+		ReadProcessMemory(osuProcessHandle, timeAddress, &songTime, sizeof(INT), NULL);
 		this_thread::sleep_for(chrono::milliseconds(1));
 	}
 }
@@ -72,10 +76,10 @@ void AutoPlay(wstring nowPlaying) {
 				break;
 			}
 
-			if ((hit.getHitType() == HIT_CIRCLE || modeSlider == MODE_NONE) && modeMoveTo != MODE_NONE) {
+			if ((hit.getHitType() == HIT_CIRCLE || modeSlider == MODE_NONE) && modeMoveTo != MODE_NONE && songStarted) {
 				SendKeyPress(&hit);
 
-				int keyPressTime = (static_cast<int>(hit.getBPM() / 4.f), 5);
+				int keyPressTime = MAX(static_cast<int>(hit.getBPM() / 4.f), 5);
 				this_thread::sleep_for(chrono::milliseconds(keyPressTime));
 
 				SendKeyRelease(&hit);
@@ -205,7 +209,7 @@ void GameActiveChecker() {
 void FindGame() {
 	osuWindow = FindWindow(NULL, L"osu!");
 	if (osuWindow == NULL) {
-		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  The procces \"osu!\" was not found!\n");
+		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  The process \"osu!\" was not found!\n");
 		fflush(wEventLog);
 
 		statusText = L"\"osu!\" NOT found!   Please start \"osu!\"...";
@@ -231,21 +235,20 @@ void FindGame() {
 
 	timeAddress = GetTimeAddress();
 
-	if (timeAddress == reinterpret_cast<LPVOID>(0xCCCCCCCC)
-		|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
+	if (timeAddress == nullptr) {
 		CloseHandle(osuProcessHandle);
 
 		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddress NOT FOUND!\n");
 		fflush(wEventLog);
 
-		statusText = L"timeAddress NOT found!   Please start \"osu!\" BEFORE starting \"Osu!Bot\"!";
+		statusText = L"timeAddress NOT found!";
 		DrawTextToWindow(hWnd, statusText, rectStatus);
 
 		FindGame();
 	}
 
 	wstringstream timeAddressString;
-	timeAddressString << "0x" << hex << (UINT)timeAddress;
+	timeAddressString << "0x" << hex << PtrToUlong(timeAddress);
 
 	/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddress\" FOUND!  Starting Checker and Time threads!\n            timeAddress: " + timeAddressString.str() + L"\n").c_str());
 	fflush(wEventLog);
