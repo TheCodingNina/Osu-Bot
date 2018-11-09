@@ -94,14 +94,14 @@ bool CreateNewConfigFile() {
 			L"Offset0 : 0",
 			L"Offset1 : 1F0",
 			L"Offset2 : 22C",
-			L"Offset3 : 428",
-			L"Offset4 : 8C",
+			L"Offset3 : 2D8",
+			L"Offset4 : 514",
 			L"ThreadOffset : -32C",
 			L"",
-			L"[Input Methode]",
+			L"[Input Method]",
 			L"UseKeyboard : True",
 			L"",
-			L"[Input Keys] //Currently only works with ASCII convertable keys!",
+			L"[Input Keys] //Currently only works with ASCII convertible keys!",
 			L"MainKey : Z",
 			L"AltKey : X",
 			L"",
@@ -309,7 +309,7 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 			wstring configSetting = readLine.substr(0,
 				MIN(readLine.find_first_of(L" "), readLine.find_first_of(L":")) - 1);
 
-			UINT pos = readLine.find_first_of(L":") + 1U;
+			UINT pos = UINT(readLine.find_first_of(L":")) + 1U;
 			UINT valuePos = readLine.at(pos) == L' ' ? pos + 1U : pos;
 
 			switch (setting) {
@@ -405,12 +405,12 @@ bool ReadFromConfigFile(const configurationSettings &setting) {
 bool ReadAllConfigSettings() {
 	try {
 		if (ReadFromConfigFile(timerPointer))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  TimerPointer get successfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  TimerPointer get successful.\n");
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  TimerPointer not specified!\n");
 
 		if (ReadFromConfigFile(songsFolderPath)) {
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  SongsFolderPath get successfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  SongsFolderPath get successful.\n");
 			if (songsPath.compare(L"") != 0)
 				pathSet = TRUE;
 			else
@@ -422,17 +422,22 @@ bool ReadAllConfigSettings() {
 		}
 
 		if (ReadFromConfigFile(inputKeys))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputKeys get successfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputKeys get successful.\n");
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  InputKeys not specified!\n");
 
 		if (ReadFromConfigFile(inputMethod))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputMethod get successfull.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  InputMethod get successful.\n");
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  InputMethod not specified!\n");
 
-		if (ReadFromConfigFile(danceSettings))
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  DanceSettings get successfull.\n");
+		if (ReadFromConfigFile(danceSettings)) {
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  DanceSettings get successful.\n");
+			SendMessage(hwndTrackBarDanceAmplifier, TBM_SETPOS, TRUE, trackBarPos);
+			SendMessage(hwndComboBoxDanceModeMoveTo, CB_SETCURSEL, (WPARAM)modeMoveTo, NULL);
+			SendMessage(hwndComboBoxDanceModeSlider, CB_SETCURSEL, (WPARAM)modeSlider, NULL);
+			SendMessage(hwndComboBoxDanceModeSpinner, CB_SETCURSEL, (WPARAM)modeSpinner, NULL);
+		}
 		else
 			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  DanceSettings not specified!\n");
 

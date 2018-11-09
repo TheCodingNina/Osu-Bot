@@ -36,11 +36,11 @@ float HermiteInterp(float _X) {
 }
 
 
-vector<vec2f> FindControlPoints(vec2f pP, vec2f pB, vec2f pE, vec2f pN, int index) {
+vector<vec2f> FindControlPoints(vec2f vpP, vec2f vpB, vec2f vpE, vec2f vpN, int index) {
 	vec2f
-		d0 = pP.cpy().sub(pB),
-		d1 = pB.cpy().sub(pE),
-		d2 = pE.cpy().sub(pN);
+		d0 = vpP.cpy().sub(vpB),
+		d1 = vpB.cpy().sub(vpE),
+		d2 = vpE.cpy().sub(vpN);
 
 	float
 		l0 = d0.length(),
@@ -48,33 +48,33 @@ vector<vec2f> FindControlPoints(vec2f pP, vec2f pB, vec2f pE, vec2f pN, int inde
 		l2 = d2.length();
 
 	vec2f
-		m0 = pP.midPoint(pB),
-		m1 = pB.midPoint(pE),
-		m2 = pE.midPoint(pN);
+		m0 = vpP.midPoint(pB),
+		m1 = vpB.midPoint(pE),
+		m2 = vpE.midPoint(pN);
 
 	float
 		amplifier0 = (atan2f(l2 / 480.f, 1.85f * (l2 / 960.f)) / ((40000.f / Amplifier) / l1)) + 1.f,
 		amplifier1 = (atan2f(l1 / 480.f, 1.85f * (l1 / 960.f)) / ((40000.f / Amplifier) / l1)) + 1.f;
 
 	vec2f
-		p0 = m1 + (pB - (m1 + (m0 - m1) * ((l1 * amplifier1) / (l0 + l1)))),
-		p1 = m0 + (pB - (m1 + (m0 - m1) * ((l1 * amplifier1) / (l0 + l1)))),
-		p2 = m2 + (pE - (m2 + (m1 - m2) * ((l2 * amplifier0) / (l1 + l2)))),
-		p3 = m1 + (pE - (m2 + (m1 - m2) * ((l2 * amplifier0) / (l1 + l2))));
+		cp0 = m1 + (pB - (m1 + (m0 - m1) * ((l1 * amplifier1) / (l0 + l1)))),
+		cp1 = m0 + (pB - (m1 + (m0 - m1) * ((l1 * amplifier1) / (l0 + l1)))),
+		cp2 = m2 + (pE - (m2 + (m1 - m2) * ((l2 * amplifier0) / (l1 + l2)))),
+		cp3 = m1 + (pE - (m2 + (m1 - m2) * ((l2 * amplifier0) / (l1 + l2))));
 
-	return index == 1 ? vector<vec2f>{ p2, p3 } : vector<vec2f> { p0, p1 };
+	return index == 1 ? vector<vec2f>{ cp2, cp3 } : vector<vec2f> { cp0, cp1 };
 }
 
 
-vec2f FlowVectorPoint(vec2f pP, vec2f pB, vec2f pE, vec2f pN, vec2f unreferencedVec2f, int index) {
+vec2f FlowVectorPoint(vec2f vpP, vec2f vpB, vec2f vpE, vec2f vpN, vec2f unreferencedVec2f, int index) {
 	UNREFERENCED_PARAMETER(unreferencedVec2f);
-	return FindControlPoints(pP, pB, pE, pN, index).at(index);
+	return FindControlPoints(vpP, vpB, vpE, vpN, index).at(index);
 }
 
-vec2f PredictionVectorPoint(vec2f pP, vec2f pB, vec2f pE, vec2f pN, vec2f p1, int unreferencedInt) {
-	UNREFERENCED_PARAMETER(pP);
+vec2f PredictionVectorPoint(vec2f vpP, vec2f vpB, vec2f vpE, vec2f vpN, vec2f cp1, int unreferencedInt) {
+	UNREFERENCED_PARAMETER(vpP);
 	UNREFERENCED_PARAMETER(unreferencedInt);
-	return pN.midPoint(pE).sub(pN).mult((pB - pE).length() / (860.0f / Amplifier)).add(pE).midPoint(p1);
+	return vpN.midPoint(vpE).sub(vpN).mult((vpB - vpE).length() / (860.0f / Amplifier)).add(vpE).midPoint(cp1);
 }
 
 
@@ -121,8 +121,11 @@ void MoveToCircle(vector<HitObject> *objects, const int nObject, function<vec2f(
 	vec2f p2;
 	if ((pE - pB).length() < (1.f / circleSize) * 400.f) {
 		p2 = FindControlPoints(pP, pB, pE, pN, 1).at(1);
-		p1 = (pB - pBack).dev((pB - pBack).length() + 1.f).mult((pE - pB).length()).add(pB);
+		p1 = (pB - pBack).normalize().mult((pE - pB).length() / 2.f).add(pB);
 		interpBool = false;
+	}
+	else if (objects->at(nObject).getHitType() == HIT_SLIDER) {
+		p2 = FindControlPoints(pP, pB, pE, pN, 1).at(1);
 	}
 	else {
 		p2 = VectorPoint(pP, pB, pE, pN, p1, 1);
@@ -139,7 +142,7 @@ void MoveToCircle(vector<HitObject> *objects, const int nObject, function<vec2f(
 		t = interpBool ? HermiteInterp(t) : t;
 		t = CLAMP(0.f, t, 1.f);
 
-		pCursor = PolyBezier(pts, pts.size() - 1, 0, t);
+		pCursor = PolyBezier(pts, INT(pts.size()) - 1, 0, t);
 
 		SetCursorPos(static_cast<int>(pCursor.x), static_cast<int>(pCursor.y));
 

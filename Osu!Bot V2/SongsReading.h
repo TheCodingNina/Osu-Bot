@@ -94,7 +94,7 @@ void ParseSong(LPCTSTR songPath) {
 
 	stackOffset = ((512.0f / 16.0f) * (1.0f - 0.7f * (circleSize - 5.0f) / 5.0f) / 10.0f) / circleSize;
 
-	for (int i = hitObjects.size() - 1; i > 0; i--) {
+	for (int i = INT(hitObjects.size()) - 1; i > 0; i--) {
 		HitObject* hitObjectI = &hitObjects[i];
 		if (hitObjectI->getStack() != 0 || hitObjectI->getHitType() == HIT_SPINNER) {
 			continue;
@@ -148,7 +148,7 @@ void ParseSong(LPCTSTR songPath) {
 			}
 		}
 	}
-	for (int i = hitObjects.size() - 1; i > 0; i--) {
+	for (int i = INT(hitObjects.size()) - 1; i > 0; i--) {
 		int n = i;
 		/* We should check every note which has not yet got a stack.
 		* Consider the case we have two interwound stacks and this will make sense.

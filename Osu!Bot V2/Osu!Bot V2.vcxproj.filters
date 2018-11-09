@@ -16,6 +16,9 @@
     <Filter Include="Header Files\OsuBot">
       <UniqueIdentifier>{a12ea123-11cb-464d-9f89-22337794502d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Project Files">
+      <UniqueIdentifier>{f5fdf684-24b8-45d2-aa9e-f6732554f8e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -84,5 +87,10 @@
     <ResourceCompile Include="OsuBotV2.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Filter>Project Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

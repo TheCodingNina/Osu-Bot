@@ -59,6 +59,9 @@ public:
 	float length() const {
 		return sqrtf(x * x + y * y);
 	}
+	vec2f normalize() {
+		return this->dev(this->length());
+	}
 	// Operators END;
 
 	// Destructor

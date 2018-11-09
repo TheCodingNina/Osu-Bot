@@ -29,27 +29,10 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
 
 // User Global Variables:
-HWND hWnd = NULL;
-HWND hwndButtonOpenSongFolder = NULL;
-HWND hwndButtonOpenSongFile = NULL;
-HWND hwndCheckBoxAutoOpenSong = NULL;
-HWND hwndCheckBoxHardrockFlip = NULL;
-HWND hwndTrackBarDanceAmplifier = NULL;
-HWND hwndComboBoxDanceModeMoveTo = NULL;
-HWND hwndComboBoxDanceModeSlider = NULL;
-HWND hwndComboBoxDanceModeSpinner = NULL;
-wstring statusText = L"Start up...";
-wstring songsPath;
 bool songFileCheck;
 
 // Standard Variables for UI:
-wstring songsFolderText = L"Select \"osu!\" Songs Folder.";
-wstring songFileText = L"Select an \"osu! beatmap\"";
-
 RECT rectOsuBotWindow;
-RECT rectSongsFolder = { 10, 10, nWidth - 140, 50 };
-RECT rectSongFile = { 10, 80, nWidth - 140, 120 };
-RECT rectStatus = { 15, nHeight - 65, nWidth - 30, rectStatus.top + 18 };
 RECT rectDanceAmplifier = { 15, 150, 200, 170 };
 RECT rectDanceModeMoveTo = { 210, 150, 320, 175 };
 RECT rectDanceModeSlider = { 330, 150, 440, 175 };
@@ -121,18 +104,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		/* EventLog */	fwprintf(wEventLog, L"[WARNING]  ConfigFile not found!\n");
 
 		int configMB = MessageBox(hWnd,
-			L"No config file was found!\nDo you want to generate a new config file?\n\nIf this doesn't work try manualy creating an empty file named \"configFile.cfg\" under the \"Data\" folder.",
-			L"Config file not found!",
+			L"No configFile was found!\nDo you want to generate a new configFile?\n\nIf this doesn't work try manualy creating an empty file named \"configFile.cfg\" under the \"Data\" folder.",
+			L"ConfigFile not found!",
 			MB_ICONWARNING | MB_YESNO | MB_APPLMODAL);
 
 		if (configMB == IDYES) {
 			CreateNewConfigFile();
-			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  Config file generated.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  ConfigFile generated successful.\n");
 
 			ReadAllConfigSettings();
 		}
 		else
-			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  Config file was not auto generated.\n");
+			/* EventLog */	fwprintf(wEventLog, L"[WARNING]  ConfigFile was not auto generated.\n");
 	}
 	fflush(wEventLog);
 
@@ -255,9 +238,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	{
 		switch (LOWORD(wParam)) {
 		case TB_ENDTRACK:
-			DWORD dwPos = SendMessage(hwndTrackBarDanceAmplifier, TBM_GETPOS, NULL, NULL);
+			ULONG dwPos = (ULONG)SendMessage(hwndTrackBarDanceAmplifier, TBM_GETPOS, NULL, NULL);
 
-			trackBarPos = dwPos;
+			trackBarPos = (INT)dwPos;
 			Amplifier = static_cast<float>(dwPos) / 80.f;
 
 			UpdateConfigFile(danceSettings);
@@ -344,20 +327,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		case CB_ComboBoxDanceModeMoveTo:
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				int index = SendMessage(hwndComboBoxDanceModeMoveTo, CB_GETCURSEL, NULL, NULL);
-				switch (index) {
-				case MODE_NONE:
+				int index = (INT)SendMessage(hwndComboBoxDanceModeMoveTo, CB_GETCURSEL, NULL, NULL);
+				
+				modeMoveTo = index;
+				if (index < MODE_STANDARD || index > MODE_PREDICTING) {
 					modeMoveTo = MODE_NONE;
-					break;
-				case MODE_STANDARD:
-					modeMoveTo = MODE_STANDARD;
-					break;
-				case MODE_FLOWING:
-					modeMoveTo = MODE_FLOWING;
-					break;
-				case MODE_PREDICTING:
-					modeMoveTo = MODE_PREDICTING;
-					break;
 				}
 			}
 			UpdateConfigFile(danceSettings);
@@ -366,20 +340,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		case CB_ComboBoxDanceModeSlider:
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				int index = SendMessage(hwndComboBoxDanceModeSlider, CB_GETCURSEL, NULL, NULL);
-				switch (index) {
-				case MODE_NONE:
+				int index = (INT)SendMessage(hwndComboBoxDanceModeSlider, CB_GETCURSEL, NULL, NULL);
+
+				modeSlider = index;
+				if (index < MODE_STANDARD || index > MODE_PREDICTING) {
 					modeSlider = MODE_NONE;
-					break;
-				case MODE_STANDARD:
-					modeSlider = MODE_STANDARD;
-					break;
-				case MODE_FLOWING:
-					modeSlider = MODE_FLOWING;
-					break;
-				case MODE_PREDICTING:
-					modeSlider = MODE_PREDICTING;
-					break;
 				}
 			}
 			UpdateConfigFile(danceSettings); 
@@ -388,20 +353,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		case CB_ComboBoxDanceModeSpinner:
 		{
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				int index = SendMessage(hwndComboBoxDanceModeSpinner, CB_GETCURSEL, NULL, NULL);
-				switch (index) {
-				case MODE_NONE:
+				int index = (INT)SendMessage(hwndComboBoxDanceModeSpinner, CB_GETCURSEL, NULL, NULL);
+				
+				modeSpinner = index;
+				if (index < MODE_STANDARD || index > MODE_PREDICTING) {
 					modeSpinner = MODE_NONE;
-					break;
-				case MODE_STANDARD:
-					modeSpinner = MODE_STANDARD;
-					break;
-				case MODE_FLOWING:
-					modeSpinner = MODE_FLOWING;
-					break;
-				case MODE_PREDICTING:
-					modeSpinner = MODE_PREDICTING;
-					break;
 				}
 			}
 			UpdateConfigFile(danceSettings);
@@ -409,7 +365,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case ID_DATAFILES_OPENDATAFOLDER:
 		{
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"explore"), LPCTSTR(L"Data"), NULL, NULL, SW_SHOW) == ERROR_FILE_NOT_FOUND)
+			if (PtrToLong(ShellExecute(NULL, LPCTSTR(L"explore"), LPCTSTR(L"Data"), NULL, NULL, SW_SHOW)) == ERROR_FILE_NOT_FOUND)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
 			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"Data\" Folder.\n");
@@ -418,7 +374,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case ID_DATAFILES_OPENSONGDATA:
 		{
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"SFData.txt"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
+			if (PtrToLong(ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"SFData.txt"), NULL, LPCTSTR(L"Data"), SW_SHOW)) == ERROR_FILE_NOT_FOUND)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
 			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"SFData.txt\".\n");
@@ -427,7 +383,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case ID_DATAFILES_OPENBEATMAPDATA:
 		{
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"BMData.txt"), NULL, LPCTSTR(L"Data"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
+			if (PtrToLong(ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"BMData.txt"), NULL, LPCTSTR(L"Data"), SW_SHOW)) == ERROR_FILE_NOT_FOUND)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
 			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"BMData.txt\".\n");
@@ -436,7 +392,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 		case ID_DATAFILES_OPENEVENTLOG:
 		{
-			if ((LONG)ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events.log"), NULL, LPCTSTR(L"Data\\Logs"), SW_SHOW) == ERROR_FILE_NOT_FOUND)
+			if (PtrToLong(ShellExecute(NULL, LPCTSTR(L"open"), LPCTSTR(L"Events.log"), NULL, LPCTSTR(L"Data\\Logs"), SW_SHOW)) == ERROR_FILE_NOT_FOUND)
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_ERRORBOX), hwnd, ErrorBox);
 
 			/* EventLog */	fwprintf(wEventLog, L"[EVENT]  User Opening \"Events.log\".\n");
@@ -569,7 +525,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			100, 40,
 			hwnd,
 			(HMENU)BTN_ButtonOpenSongFolder,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -581,7 +537,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			100, 40,
 			hwnd,
 			(HMENU)BTN_ButtonOpenSongFile,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -595,7 +551,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			140, 15,
 			hwnd,
 			(HMENU)CB_CheckBoxAutoOpenSong,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -610,7 +566,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			140, 15,
 			hwnd,
 			(HMENU)CB_CheckBoxHardrockFlip,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -626,7 +582,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			180, 30,
 			hwnd,
 			(HMENU)TB_TrackBarDanceAmplifier,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -643,7 +599,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			110, 100,
 			hwnd,
 			(HMENU)CB_ComboBoxDanceModeMoveTo,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -662,7 +618,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			110, 100,
 			hwnd,
 			(HMENU)CB_ComboBoxDanceModeSlider,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -681,7 +637,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			110, 100,
 			hwnd,
 			(HMENU)CB_ComboBoxDanceModeSpinner,
-			(HINSTANCE)GetWindowLong(hwnd, GWLP_HINSTANCE),
+			(HINSTANCE)LongToPtr(GetWindowLong(hwnd, GWLP_HINSTANCE)),
 			nullptr
 		);
 
@@ -830,21 +786,20 @@ INT_PTR CALLBACK Settings(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 			timeAddress = GetTimeAddress();
 
-			if (timeAddress == reinterpret_cast<LPVOID>(0xCCCCCCCC)
-				|| timeAddress == reinterpret_cast<LPVOID>(0x0)) {
+			if (timeAddress == nullptr) {
 				CloseHandle(osuProcessHandle);
 
-				/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddres NOT FOUND!\n");
+				/* EventLog */	fwprintf(wEventLog, L"[WARNING]  timeAddress NOT FOUND!\n");
 				fflush(wEventLog);
 
-				statusText = L"timeAddress NOT found!   Please use a correct timeAddress pointer.";
+				statusText = L"timeAddress NOT found!";
 				DrawTextToWindow(hWnd, statusText, rectStatus);
 			}
 
 			wstringstream timeAddressString;
-			timeAddressString << "0x" << hex << (UINT)timeAddress;
+			timeAddressString << "0x" << hex << PtrToUlong(timeAddress);
 
-			/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddres\" UPDATED!\n           timeAddres: " + timeAddressString.str() + L"\n").c_str());
+			/* EventLog */	fwprintf(wEventLog, (L"[EVENT]  \"timeAddress\" UPDATED!\n            timeAddress: " + timeAddressString.str() + L"\n").c_str());
 			fflush(wEventLog);
 
 
