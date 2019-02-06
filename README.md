@@ -2,7 +2,7 @@
 A cursor dancing bot that can, fully autonomous, play the Rhythm game called Osu! (standard mode).
 
 **NOTICE: Osu!Bot V2 is NOT being supported any more! 
-          Please go to [Osu!Bot V3](github.com/DDDinggo22/Osu-Bot-V3) for a continued version.**
+          Please go to [Osu!Bot V3](https://github.com/DDDinggo22/Osu-Bot-V3) for a continued version.**
 
 USE THIS WITH RESPONSABLITY!!
 I DO NOT, I REPEAT, I DO NOT TAKE RESPONSABILITY IF YOU GET YOUR ACCOUNT BANNED/RESTRICTED ON OSU!
